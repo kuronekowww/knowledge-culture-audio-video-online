@@ -1,0 +1,6 @@
+{
+  "mode": "local",
+  "local_api_base": "http://127.0.0.1:30000",
+  "local_asset_port": 30002,
+  "auto_start_local": true
+}

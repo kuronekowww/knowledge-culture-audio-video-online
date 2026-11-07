@@ -1,0 +1,7 @@
+# 字幕期间准备分镜
+
+storyboard_prepare仅准备预案，可与full字幕核对在一个执行流程中并发；这是脚本线程，不授权创建额外Agent。预案读取当前ASR、选段content与专辑固定设定，每镜必须引用实际source_unit_ids。未知费用的命令失败/中断后不自动重放；先检查产物再显式retry。
+
+预案不能发布图片、代替用户画风选择或声称字幕已通过。字幕通过后对照术语、数字、语义和最终音频核对，再写正式visual_bible/storyboard/copy/image_manifest；不写屏幕尾钩子或AI提示文字；上方正文标题按统一配置测宽并保持字号。flow自动绑定时码与当前版本后才能生图。
+
+没有storyboard_prepare_command时返回awaiting_executor，不影响已有字幕结果；Agent可在storyboard阶段直接写正式产物，无需为了预案额外接入模型或收费服务。

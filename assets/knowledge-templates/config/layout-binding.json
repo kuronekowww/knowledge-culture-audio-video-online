@@ -1,0 +1,40 @@
+{
+  "source_path": "/Users/xmly/.codex/skills/knowledge-culture-audio-video-online/layout-profile.json",
+  "id": "portrait-user-20261107-r18",
+  "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa",
+  "animation_rect": [
+    0,
+    600,
+    1080,
+    1320
+  ],
+  "content_rect": [
+    72,
+    704,
+    1008,
+    1150
+  ],
+  "subtitle_reserve_rect": [
+    60,
+    1166,
+    1020,
+    1317
+  ],
+  "reserved_top_bottom": [
+    [
+      0,
+      0,
+      1080,
+      240
+    ],
+    [
+      0,
+      1620,
+      1080,
+      1920
+    ]
+  ],
+  "scope": "Body template; cover and outro continue to use the original production skill.",
+  "platform_safety": "Local production template reservation, not an official WeChat specification.",
+  "subtitle_background_policy": "none_no_full_width_gradient_or_solid_panel"
+}

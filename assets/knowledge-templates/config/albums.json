@@ -1,0 +1,140 @@
+{
+  "54445254": {
+    "name": "墨菲定律：每天学点心理学丨人人都逃不掉的心理效应",
+    "display": "墨菲定律：每天学点心理学",
+    "cover": "assets/album-54445254.jpg",
+    "theme": {
+      "accent": "#527A99",
+      "background": "#222f3a",
+      "background_bottom": "#172026",
+      "paper": "#e8ecf0",
+      "ink": "#293d4c",
+      "secondary": "#8596a2",
+      "highlight": "#ECC76F"
+    },
+    "style": {
+      "font_size": 15,
+      "font": null,
+      "text_color": "#1271fe",
+      "border_color": "#000000",
+      "bold": false,
+      "underline": false,
+      "alignment": 0,
+      "letter_spacing": -1.33333333324191,
+      "line_spacing": 2.5999999999999983,
+      "x": 241.33058265599993,
+      "y": -903.0025474366003,
+      "scale_x": 0.9722795280666666,
+      "scale_y": 0.9722795280666666,
+      "alpha": 1,
+      "safe_box_px": [
+        355.37953412,
+        1376.3371641200001,
+        969.37953412,
+        1446.6653833166001
+      ],
+      "font_file": "assets/fonts/jiangxizhuokai.ttf",
+      "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
+      "font_postscript": "jiangxizhuokai-Regular",
+      "layout_profile": {
+        "id": "portrait-user-20261107-r18",
+        "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+      },
+      "pixel_style": {
+        "font": "display",
+        "font_size_px": 58.336771684,
+        "weight": 400,
+        "letter_spacing_px": -3.889118112,
+        "line_height": 1.15,
+        "color_source": "album_cover_palette",
+        "stroke_px": 3.24093176,
+        "stroke_color": "#000000",
+        "stroke_alpha": 1,
+        "max_width_px": 614,
+        "nominal_scale_x": 1,
+        "max_lines": 2,
+        "overflow": "wrap_then_require_short_album_name",
+        "left_top_px": [
+          357,
+          1377.95763
+        ],
+        "color": "#1271fe",
+        "resolved_scale_x": 1
+      },
+      "measurement": {
+        "advance_px": 607.330582656,
+        "paint_width_px": 610.571514416,
+        "scale_x": 1
+      }
+    }
+  },
+  "70349771": {
+    "name": "人间清醒：底层逻辑和顶层认知 |看清人生的真相",
+    "display": "人间清醒：底层\n逻辑和顶层认知",
+    "cover": "assets/album-70349771.jpg",
+    "theme": {
+      "accent": "#3676B8",
+      "background": "#192e43",
+      "background_bottom": "#101e2d",
+      "paper": "#e4ecf4",
+      "ink": "#293a4c",
+      "secondary": "#7a93ae",
+      "highlight": "#ECC76F"
+    },
+    "style": {
+      "font_size": 15,
+      "font": null,
+      "text_color": "#1278fe",
+      "border_color": "#000000",
+      "bold": false,
+      "underline": false,
+      "alignment": 0,
+      "letter_spacing": -1.33333333324191,
+      "line_spacing": 2.5999999999999983,
+      "x": 12.776173215999961,
+      "y": -970.0898348732003,
+      "scale_x": 0.9722795280666666,
+      "scale_y": 0.9722795280666666,
+      "alpha": 1,
+      "safe_box_px": [
+        355.37953412,
+        1376.3371641200001,
+        969.37953412,
+        1513.7526707532002
+      ],
+      "font_file": "assets/fonts/jiangxizhuokai.ttf",
+      "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
+      "font_postscript": "jiangxizhuokai-Regular",
+      "layout_profile": {
+        "id": "portrait-user-20261107-r18",
+        "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+      },
+      "pixel_style": {
+        "font": "display",
+        "font_size_px": 58.336771684,
+        "weight": 400,
+        "letter_spacing_px": -3.889118112,
+        "line_height": 1.15,
+        "color_source": "album_cover_palette",
+        "stroke_px": 3.24093176,
+        "stroke_color": "#000000",
+        "stroke_alpha": 1,
+        "max_width_px": 614,
+        "nominal_scale_x": 1,
+        "max_lines": 2,
+        "overflow": "wrap_then_require_short_album_name",
+        "left_top_px": [
+          357,
+          1377.95763
+        ],
+        "color": "#1278fe",
+        "resolved_scale_x": 1
+      },
+      "measurement": {
+        "advance_px": 378.776173216,
+        "paint_width_px": 382.01710497600004,
+        "scale_x": 1
+      }
+    }
+  }
+}

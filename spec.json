@@ -1,0 +1,95 @@
+{
+  "version": 15,
+  "description": "泛价值原声竖版视频；Hyperframes图像开场＋知识模板＋按需插图，或纯图片故事路线；统一品牌布局。",
+  "transform_convention": {
+    "note": "服务按 raw_x/W、raw_y/H 写入剪映；剪映归一化值作用于半画布。左上角像素中心(cx,cy)换算 raw_x=2*cx-W、raw_y=H-2*cy。spec x/y为API原始参数，不可再除一次。",
+    "origin": "center",
+    "x_positive": "right",
+    "y_positive": "up",
+    "scale": "full_canvas"
+  },
+  "branding": {
+    "enabled": true
+  },
+  "timing": {
+    "body_min_seconds": 300.0,
+    "target_max_seconds": 600.0,
+    "body_max_seconds": null,
+    "final_max_seconds": null
+  },
+  "compliance": {
+    "include_fiction_notice": false,
+    "include_ai_notice": false
+  },
+  "orientations": [
+    "portrait"
+  ],
+  "api_limits": {
+    "max_items": 50,
+    "max_payload_bytes": 100000
+  },
+  "visual_layout": {
+    "cover_id": "cover_portrait",
+    "cover_text": "derived_from_layout_profile.cover_design",
+    "background_scope": "album",
+    "body_scene_orientation": "landscape",
+    "image_quality": "low",
+    "background_texture": "edge patterns gently extend inward; central half remains calm",
+    "missing_album_cover": "confirmed_style_only; omit album thumbnail, preserve brand text and playback sticker"
+  },
+  "presentation_policy": {
+    "suppressed_text_roles": [
+      "cta",
+      "notice"
+    ],
+    "upper_title_single_line": true,
+    "text_geometry": "derived_from_layout_profile; no secondary layout overrides"
+  },
+  "image_pacing": {
+    "target_seconds": 7,
+    "body_images_per_10_minutes": [
+      80,
+      100
+    ],
+    "cover_count": 1,
+    "album_background_scope": "once per album, excluded from per-track image count",
+    "scope": "images_mode_only"
+  },
+  "draft_naming": {
+    "pattern": "{album_name}_{track_id}_{episode_title}",
+    "source_album_name": "master_catalog, otherwise copy.album_name"
+  },
+  "layout_profile": "layout-profile.json",
+  "text_defaults": {
+    "bold": false
+  },
+  "presentation_modes": {
+    "choice": "explicit_or_previously_selected",
+    "values": [
+      "hyperframes",
+      "images"
+    ],
+    "legacy_job_default": "images",
+    "web_reference": "references/web-animation.md",
+    "preferred_opening_styles": [
+      "guochao",
+      "flat-vector",
+      "comic-pop",
+      "paper-cut",
+      "editorial-collage",
+      "ukiyo-e"
+    ],
+    "knowledge_templates": [
+      "K01",
+      "K02",
+      "K03",
+      "K04",
+      "K05",
+      "K06",
+      "E01",
+      "E02"
+    ],
+    "background_policy": "same_hue_deep_outer_light_animation",
+    "subtitle_backplate": "none"
+  }
+}

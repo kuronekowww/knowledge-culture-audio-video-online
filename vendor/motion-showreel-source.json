@@ -1,0 +1,467 @@
+{
+  "repo": "https://github.com/ConardLi/garden-skills.git",
+  "subdirectory": "skills/motion-showreel",
+  "downloaded_ref": "main",
+  "downloaded_date": "2026-11-07",
+  "latest_path_commit": "2b9a89340b70f632d31c0f1c69fce94a7912423e",
+  "last_path_commit_date": "2026-10-25T13:45:10Z",
+  "integration": "vendored unmodified; parent workflow governs audio, branding, routing and authorized confirmations",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "f526ad6897ba80824bce19c994a276b20047779f61fd8c1009faae898865bd73"
+    },
+    {
+      "path": "README.zh-CN.md",
+      "sha256": "e8980df0d5096020ee56c88723a12a14e9aefc6ebb0538dc4c73f2247897ac9e"
+    },
+    {
+      "path": "SKILL.md",
+      "sha256": "1f4c26afebac69aa2b6a8e61c3440c636c686623161f74905143993bcf4af343"
+    },
+    {
+      "path": "assets/editor/editor.css",
+      "sha256": "123c56a5ed222e4be6637900d60325a6d2892162dcd0550fd8512a12a411a03b"
+    },
+    {
+      "path": "assets/editor/editor.js",
+      "sha256": "813e6054558c2efcbbf1e70da1ad7fa23f74d9847a6582dc5e6c92cb69e035d3"
+    },
+    {
+      "path": "assets/editor/index.html",
+      "sha256": "b2f7ba46fe0ab83a2dcd18bc9324d3c0bebf1692e3d30d7c7018392482430bf6"
+    },
+    {
+      "path": "assets/editor/progress.js",
+      "sha256": "86214625dd9e41bdcefabd8d2329d9e7ab6fd249dc0f0f2514f6298d3f2c5960"
+    },
+    {
+      "path": "assets/editor/viewport.css",
+      "sha256": "31440951ba3f8c7844cecefb1586c828755d7b84dec0251c8a8b9c7fdbcda20b"
+    },
+    {
+      "path": "assets/editor/viewport.js",
+      "sha256": "633bf88ed093bb744496e1bcad069a8060cf9ea81e2c50010f0b5a3358b91fa9"
+    },
+    {
+      "path": "assets/starter/build.sh",
+      "sha256": "c4582e7fd36c8a5218cf42132036410858997bde856300fb62abc714164ac6dd"
+    },
+    {
+      "path": "assets/starter/index.html",
+      "sha256": "153679b455d80a29f1ea739a5b1de34511f74485c308b0dd0af296d41635c870"
+    },
+    {
+      "path": "assets/starter/motion.js",
+      "sha256": "7b4831e12701871770577f581d3fb815b650188e4ea046717a9cf0695000f472"
+    },
+    {
+      "path": "assets/starter/narration.js",
+      "sha256": "8e51d30e39fa092339e451436e601303e72b6232c4cf5f8f660b7eef8886e6e2"
+    },
+    {
+      "path": "assets/starter/package.json",
+      "sha256": "d240111b957fdbde27c1eb651cb9773b1cc600c7580f6c8832042bff4d5354ea"
+    },
+    {
+      "path": "assets/starter/preview.js",
+      "sha256": "0003a0ed00967b1d9fe11a166fd1b3955df34aa7edb17189835482c20fad6c80"
+    },
+    {
+      "path": "assets/starter/score.layer.mjs",
+      "sha256": "630ccea4bb231fcd5166e372ad7ffa272087d555097fc5ceb6308273c214b88c"
+    },
+    {
+      "path": "assets/starter/score.mjs",
+      "sha256": "f16900ad54a99e981cc38f61375f119ea6c193707ad1d37e5c78f7e2c4eebbef"
+    },
+    {
+      "path": "assets/starter/score.tone.js",
+      "sha256": "572e87427894ae97bf556c196bf0b88ddf17cab6d6d8e42484e10353d023cc06"
+    },
+    {
+      "path": "assets/starter/timeline.js",
+      "sha256": "33cc41c0ae9d2db2572febee7c01d1b2031dc8e58b1d39f90d3de5e00bc0ea5b"
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "e96021c92e5e03de577de992e6ef37efba254c11eec8422905faf7813c3364d9"
+    },
+    {
+      "path": "references/brief-template.md",
+      "sha256": "da53e1d976569b38d7d2813e032d0815d5d78aafb878f15381fe17bc3e1427ae"
+    },
+    {
+      "path": "references/craft.md",
+      "sha256": "48946141d68881eff89870ba4643bfeccd4f1f90c07d495d64f520c6315cd8aa"
+    },
+    {
+      "path": "references/editor.md",
+      "sha256": "f0d1a288976ab659adb7cc64a84205ed1f13309735438ece1beacac5e896843c"
+    },
+    {
+      "path": "references/formats.md",
+      "sha256": "cde2a3c34ad423c27e6c45d03d620de90d245e912b5c11445367c57efa8dc819"
+    },
+    {
+      "path": "references/long-form.md",
+      "sha256": "acd71c4633c59aa46b597e9a79aaf3d3fc08a9c1804c7367b4c38dffa1e7e819"
+    },
+    {
+      "path": "references/narration.md",
+      "sha256": "537cc0149cc07da9fd75a0c21e6bc7a81f4cb0c01ce7e53b1f4250c14d934e57"
+    },
+    {
+      "path": "references/progress.md",
+      "sha256": "8f401f82c44dc27f22170a02f03f18726a3c2e3203fa6a4f6165b501f1756a62"
+    },
+    {
+      "path": "references/recipes.md",
+      "sha256": "717f9ac7c01316a9efb0166f16d133bff60d630016ff0be272bb9e174eabed29"
+    },
+    {
+      "path": "references/review.md",
+      "sha256": "26007aea4a8ef7e6b7540864015badd3448039dd369bc3ef78d9e3ca6205f5af"
+    },
+    {
+      "path": "references/sound.md",
+      "sha256": "e057a7228cfbc0ddf7294776cec20c80c36176e5572a666c024ad6a9f6cd4647"
+    },
+    {
+      "path": "references/stack.md",
+      "sha256": "b65d2c605ffa101b094e00de9cbea4f8948098d074b431d6851ffd186c61049e"
+    },
+    {
+      "path": "references/styles/INDEX.md",
+      "sha256": "f276df0a41812ff8dcfe3f7c3c8be455a921208276b90d31e8a6c69b32df388b"
+    },
+    {
+      "path": "references/styles/_template.md",
+      "sha256": "66aea11db5d0e75c173e06bd155d65f2a46686c9b4e0531d5b796547a7e22b86"
+    },
+    {
+      "path": "references/styles/art-deco.md",
+      "sha256": "3620e5edcfda8bb780f0b71d430d9f9ef7a5fef977edbf0b8a96d67a7e1a62da"
+    },
+    {
+      "path": "references/styles/blueprint.md",
+      "sha256": "ed4c64318ba368753f408542195cd47fe8412ed1f6758db8549951ca894dbb09"
+    },
+    {
+      "path": "references/styles/cel-anime-80s.md",
+      "sha256": "188527e1e6b7090b9d3851c80e15f2604272ed2e70d61b55877a7e167723b24e"
+    },
+    {
+      "path": "references/styles/cinematic-title.md",
+      "sha256": "ce2b9e3744ebc31f24b0c4cc16f851bd1cbf3bbaa2f4ea035a821bc3aed00b8f"
+    },
+    {
+      "path": "references/styles/comic-pop.md",
+      "sha256": "d2f27046a3da1abe5ba574cc9dc39d215a1d3a2bc12b944390d01ee4d26c362a"
+    },
+    {
+      "path": "references/styles/concept-morph.md",
+      "sha256": "d1ac58bf6f6afa4776fb3ae57f8ceaa46b9027fd819ba235a3a37b5847f2c421"
+    },
+    {
+      "path": "references/styles/copperplate-engraving.md",
+      "sha256": "4217485b642458fad84f2932dfdb2a887353190c6bc0ea98e9cd6425633d9c51"
+    },
+    {
+      "path": "references/styles/crayon-storybook.md",
+      "sha256": "9ce3bbb290a0325a9976853e395fbd07376654d38c309c18b90bc536f0d7ee41"
+    },
+    {
+      "path": "references/styles/crt-vhs.md",
+      "sha256": "35c860029083b8e5be0c9632180993cb2d1a71968249451057eb3a2409383576"
+    },
+    {
+      "path": "references/styles/dark-keynote.md",
+      "sha256": "e5c26833025f3449aa5e37f5fb033c919dad4812ae9b04cf8fd001b712380e23"
+    },
+    {
+      "path": "references/styles/data-motion.md",
+      "sha256": "ab618ebcb2d4d19ebe9fc23881fc3fa6ddc400257179c4b591bee2a10bfa5162"
+    },
+    {
+      "path": "references/styles/editorial-collage.md",
+      "sha256": "f4e5bcec7ede466974b54d49448435f9b9f9e6636426fc1845f74cb540e29116"
+    },
+    {
+      "path": "references/styles/flat-vector.md",
+      "sha256": "8c1d7c97552e62a7ce51815e6c188c301e2c233334a730ed1c318f46e81bca18"
+    },
+    {
+      "path": "references/styles/generative-geometry.md",
+      "sha256": "c54ab0b286e318e82f6592b0a84d2e29d66dcfc4d62a7fb1997b4aabd72d18d6"
+    },
+    {
+      "path": "references/styles/glass-material.md",
+      "sha256": "4376395f157d36536b2f1e6234febd85debca0369011e7f2f3286f173761bf66"
+    },
+    {
+      "path": "references/styles/glitch-digital.md",
+      "sha256": "e20b4a6b19e049d7541db92a62387f7731f0aa066cb6284960a2bf29166aec8a"
+    },
+    {
+      "path": "references/styles/guochao.md",
+      "sha256": "c1859f31f1f90a775701d92c607ece4cd1bcc6cf7c34ad9d5e4ea60e4a5b308b"
+    },
+    {
+      "path": "references/styles/hologram-hud.md",
+      "sha256": "7020907c7ed0e694f5ec2b3588b310ee724ecf8d983331b17ebf68d574eb131d"
+    },
+    {
+      "path": "references/styles/illuminated-manuscript.md",
+      "sha256": "6087b9cf658c0a06844ca70ba611566e33479abf0d727f5cb1d7df7eec5c91e8"
+    },
+    {
+      "path": "references/styles/ink-wash.md",
+      "sha256": "169d8f2800bf3978ee60b2c9b30c50d8d97526798334f3aaed6fcfd3f82faae0"
+    },
+    {
+      "path": "references/styles/isometric-infographic.md",
+      "sha256": "8807346fadac591bcaaeab20ad961367a6fa2026b66a6099461b046f64bc54c6"
+    },
+    {
+      "path": "references/styles/kinetic-brutalist.md",
+      "sha256": "e11d97eb089eea4ee99cda8528a2a5e1a648f24d2527929c74c7f529d1111d3e"
+    },
+    {
+      "path": "references/styles/liquid-shader.md",
+      "sha256": "ffacd9ace86fcb01594cc1b51bf80c9671dfd1a67bf5d1a677b7a20349666c8b"
+    },
+    {
+      "path": "references/styles/minimal-ui.md",
+      "sha256": "b60f2e9d3d7c2ceb311ad19bf9db1975fdfcd636c900d75a555a2ae7f827df01"
+    },
+    {
+      "path": "references/styles/mixed-media-era.md",
+      "sha256": "5c76c3cb39702a776b608d6f38fe86806e96b58a6e21927564a66c473fa6f0ca"
+    },
+    {
+      "path": "references/styles/one-line.md",
+      "sha256": "03a8d85f18fb49d58e385b6c404ca5bb1d3f52c2607067b42cf878b773aa58b0"
+    },
+    {
+      "path": "references/styles/painterly.md",
+      "sha256": "a86fde9fbc04be95bc956b71f4d22cc5da97cae0029e10440e4e411e2a50520f"
+    },
+    {
+      "path": "references/styles/paper-cut.md",
+      "sha256": "5c81f31fb38a347add802345e6791a4984c74bf3fdbf1e37ab04a0b23e85572e"
+    },
+    {
+      "path": "references/styles/particle-field.md",
+      "sha256": "1f7098c3ae09db858913b06b69dca6ae7a0e20d5fa0fef39eee0380f96ad38e3"
+    },
+    {
+      "path": "references/styles/pixel-diorama.md",
+      "sha256": "527464e52f2b3d7de777f1fc8c7e85c0e2351c775b0901b2fcc0f8daac70f859"
+    },
+    {
+      "path": "references/styles/pixel-game.md",
+      "sha256": "1e5a6485988c946ef8aef4c972ad8d8c3ea8e053a193f6d8ec9d299a2d259a53"
+    },
+    {
+      "path": "references/styles/risograph-print.md",
+      "sha256": "bfb0b148e60e4f338f3c4b757203859678dc36017cf1d3d002c68e84eb00ed7b"
+    },
+    {
+      "path": "references/styles/rubber-hose.md",
+      "sha256": "f2ab7b8b1d2f29e5a135b6cd7451dbe853b28bf634075c17d796b233197fe0fd"
+    },
+    {
+      "path": "references/styles/shadow-puppet.md",
+      "sha256": "2f31a1ebb8d95f535b419f54cbb95416e1946833422dc41b939a6e305b977662"
+    },
+    {
+      "path": "references/styles/soft-3d-toy.md",
+      "sha256": "1b32438f87cc961dca5af69a787d5863c91c865d83cad9110baa0ab69df43924"
+    },
+    {
+      "path": "references/styles/soft-organic.md",
+      "sha256": "487ee9f4cce19b12b56a79403c07c8a0780aa648e211207ee94d87f8578177fd"
+    },
+    {
+      "path": "references/styles/stained-glass.md",
+      "sha256": "8ea2f3c85c2dbc239245f6ec941b2130b607b842d957d9257381a67dc9bd5b29"
+    },
+    {
+      "path": "references/styles/swiss-editorial.md",
+      "sha256": "28c6c0ca5804e97aa1f3b59d1cb7ba1ca80408cfb39177e8aedf1d5d1687beda"
+    },
+    {
+      "path": "references/styles/synthwave-neon.md",
+      "sha256": "02f0d33a81c998aa48cc6f9c5183f0db5ad6441dbf481a20cb76b35f7466aaac"
+    },
+    {
+      "path": "references/styles/terminal-ascii.md",
+      "sha256": "1b4ce90ef93b1faa51380714bc72249047a310b1c94144e7d88659b4a8bc383a"
+    },
+    {
+      "path": "references/styles/tilt-shift-miniature.md",
+      "sha256": "41d06c4526c084b2f16184e4c0b5d9029af29ad8c6326e83f313eefb3de0d412"
+    },
+    {
+      "path": "references/styles/ukiyo-e.md",
+      "sha256": "f64b436593f8687b0a6a5321ed4a4e9823eae7eb6325e656a1e6d7b2b91c8e75"
+    },
+    {
+      "path": "references/styles/whiteboard-explainer.md",
+      "sha256": "9f78098f4835048a47f8ee138a629254a52c63e079f06bc47ccb914e095ce2d7"
+    },
+    {
+      "path": "scripts/audio.mjs",
+      "sha256": "28288b54ba6facb9ed1a41b151ed9f0d1b1daab4445ee1efdd18bd2d57a8a41c"
+    },
+    {
+      "path": "scripts/build-long.mjs",
+      "sha256": "f9dd3f0c6212b6b813281014c1c41222b8f0fb930f103b050d5e165375efa53d"
+    },
+    {
+      "path": "scripts/check-env.mjs",
+      "sha256": "0746f418addacdda2e7abf7d1e2c0f867faadee4acd36cdd577bde5d664516a0"
+    },
+    {
+      "path": "scripts/editor.mjs",
+      "sha256": "fda2bb166f4661492bb5e3e2bd9fef3d7cd60b1972180407f313d5438e61e559"
+    },
+    {
+      "path": "scripts/inspect.mjs",
+      "sha256": "4c03937d44bb5d37c316cb43e2ba39cb5a00dc055787a5b79c1b6ddf5fae0b80"
+    },
+    {
+      "path": "scripts/lib/browser.mjs",
+      "sha256": "f6c6971139e58e6b8f942bb70b3cd5c3a33d893aa1a1d919073b6e6586d5198c"
+    },
+    {
+      "path": "scripts/lib/editor-media.mjs",
+      "sha256": "a1772acf26831d1dc13abee77f92d7526041aa9ecf9ddfc45798394ffd6af6b7"
+    },
+    {
+      "path": "scripts/lib/editor-model.mjs",
+      "sha256": "8afba693fd978db0d77585fd0ca69e36df94b0da0ec281acce2efe765385adb5"
+    },
+    {
+      "path": "scripts/lib/editor-progress.mjs",
+      "sha256": "2694f3cd8ff83fe1d868415ea8042ae47011743e01a3dbea91cbfbb87dab8528"
+    },
+    {
+      "path": "scripts/lib/fft.mjs",
+      "sha256": "5b0ea953cc794e6072e11767a5b6ce624e97190d11eba8970062030a7a62866b"
+    },
+    {
+      "path": "scripts/lib/frames.mjs",
+      "sha256": "9a13611de551c5e3e5ff9139ada2d460fca36829bc90f809096a411c6fc3037d"
+    },
+    {
+      "path": "scripts/lib/narration-providers.mjs",
+      "sha256": "9eb61ee5afc459172f873aef00ac17ad4fd2cfbb7d3647c08d5761a91b8354cc"
+    },
+    {
+      "path": "scripts/lib/narration.mjs",
+      "sha256": "d2270255c8f206104970172a90115b34f153b2454def630dd9c4a96388c03289"
+    },
+    {
+      "path": "scripts/lib/project.mjs",
+      "sha256": "dc2665e7163bb912d36e9153d88204633f2716631c8cf00968f522443e6e14d2"
+    },
+    {
+      "path": "scripts/lib/synth.mjs",
+      "sha256": "1da0f25dbff3e538e42685238be26f59f8229599656a79ef1181fe0677d1f534"
+    },
+    {
+      "path": "scripts/lib/text-hook.mjs",
+      "sha256": "e1df9b84735f25058bddb58ef41f9a6d6d88a0f9a87c3a401962a74477a385ee"
+    },
+    {
+      "path": "scripts/lib/tone-render.mjs",
+      "sha256": "2edf2eefbaeb3d8518e050fcae0e0be85678d41e4cf2a3b29975c4b7ed57da94"
+    },
+    {
+      "path": "scripts/narration.mjs",
+      "sha256": "afb1c565c334a8f980a3ef1a7f2b3690df6b47fa99e4ec507a331e14fe23e256"
+    },
+    {
+      "path": "scripts/package-lock.json",
+      "sha256": "9976cfec587feba41e3bde014b08426df9321606b48d148972c8c48eb67cb6ec"
+    },
+    {
+      "path": "scripts/package.json",
+      "sha256": "6caaf8db88c3a5350ac32bf696022425d1d60ddb2b756da6f05d05d75eb0a18c"
+    },
+    {
+      "path": "scripts/preview.mjs",
+      "sha256": "91f7ca7e3005378c3f806f800cff18358ec94f183ddc1cb6e1cf003f2e6756ed"
+    },
+    {
+      "path": "scripts/progress.mjs",
+      "sha256": "42c9d27c79f62d6641b917f7702b4508639e8a3f3be5ac999d9ac975163e954a"
+    },
+    {
+      "path": "scripts/render.mjs",
+      "sha256": "b35c3ddc93f5e6c91c0db170110f028bd31d311b514763d4719b42fb7afbc636"
+    },
+    {
+      "path": "scripts/scaffold.sh",
+      "sha256": "057b1521580270993139255346ffe921b7ed267e80f6c1e433c0fd81088cf300"
+    },
+    {
+      "path": "scripts/setup.sh",
+      "sha256": "07de840b2bc9b7888a48261561c03dd88eff1fe06cea53eda6eaab4f1d62da3c"
+    },
+    {
+      "path": "scripts/test/editor-layout.test.mjs",
+      "sha256": "72af63bf9bd7f49b6b3c133ad87a92fb57a15612aa25560a9804abd2f5a8355e"
+    },
+    {
+      "path": "scripts/test/editor-model.test.mjs",
+      "sha256": "9c67425a4f7408a37c0f275643f8c1394cbaecf885677b891beabff24cd9d1cb"
+    },
+    {
+      "path": "scripts/test/editor-progress.test.mjs",
+      "sha256": "5ff93137d41da01dba477dde8ae54e005c7c25728f0ac4e020c08e59a200f11a"
+    },
+    {
+      "path": "scripts/test/editor.test.mjs",
+      "sha256": "ae2ef52aa616be76ee11d676fe4fc61cbe79c6735cf57225e781cd4e3d6982fb"
+    },
+    {
+      "path": "scripts/test/fixtures/page/index.html",
+      "sha256": "bb79b662849de02cfd3fca20054008ac2e1b188d359af19ac9548dcb83343f78"
+    },
+    {
+      "path": "scripts/test/fixtures/text/index.html",
+      "sha256": "2f5dd72f8105198294f8c3ea047085de002ebe2ac72e22f299799c2b82317ad0"
+    },
+    {
+      "path": "scripts/test/long.test.mjs",
+      "sha256": "01a480077726bf2a11e1429257511780f0cb87af1b19f3aee2c1e69a5de9e800"
+    },
+    {
+      "path": "scripts/test/narration-clock.test.mjs",
+      "sha256": "ad489348d9e366a020db9ff72fdaee0cf591478f46b50ecfb1c347bc0f767513"
+    },
+    {
+      "path": "scripts/test/narration.test.mjs",
+      "sha256": "afebe53bd5e2d140819aa2c98f38b8251cad2c6113a11d855bd8eb4dd6393f01"
+    },
+    {
+      "path": "scripts/test/preview.test.mjs",
+      "sha256": "5f2d02c04475a085acc3e756f109b715e09ec2d89549acbf8d5161b092260433"
+    },
+    {
+      "path": "scripts/test/render-context.test.mjs",
+      "sha256": "df34ff4a7740c65a521c7a62b34fcbc3711041a391fc98e3a448381f3530cb96"
+    },
+    {
+      "path": "scripts/test/starter.test.mjs",
+      "sha256": "255853c2acdf96b9d278d7077b5ac412e639d8b34187dd44d942939c6ea6481b"
+    },
+    {
+      "path": "scripts/test/tools.test.mjs",
+      "sha256": "41765e40b04a0fa2a8065c0971c0cb1a97037901f4246d6ac512ea58ccf0cded"
+    }
+  ]
+}

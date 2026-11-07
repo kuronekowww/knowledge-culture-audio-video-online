@@ -1,0 +1,281 @@
+{
+  "schema": "knowledge-layout/v1",
+  "id": "portrait-user-20261107-r18",
+  "units": "canvas_pixels_top_left_xyxy",
+  "canvas": {
+    "width": 1080,
+    "height": 1920
+  },
+  "cover_safe_rect_px": [
+    54,
+    250,
+    1026,
+    1440
+  ],
+  "body_images": {
+    "mode": "raw_image_full_width_centered_on_separate_background",
+    "fit": "width",
+    "center": "canvas",
+    "preserve_bytes": true
+  },
+  "font_files": {
+    "display": {
+      "asset": "assets/fonts/jiangxizhuokai.ttf",
+      "sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
+      "postscript": "jiangxizhuokai-Regular",
+      "weight": 400,
+      "coverage": "assets/fonts/display-coverage.json",
+      "coverage_sha256": "645cd56af2467fadd7f423f785e6ca51ad61229f60ec058d75098539bcd796ca",
+      "origin": "User-installed 江西拙楷 Version 1.000"
+    },
+    "subtitle": {
+      "asset": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+      "sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
+      "postscript": "PingFangSC-Medium",
+      "weight": 500,
+      "coverage": "assets/fonts/subtitle-coverage.json",
+      "coverage_sha256": "0e2f7a81ce0e98a7aaefe13937a3dede479a92564e7b4af0fca585d25d2b083b",
+      "origin": "macOS registered PingFang SC Medium; require exact local file hash, no substitution",
+      "embedding": "local",
+      "local_name": "PingFangSC-Medium"
+    }
+  },
+  "texts": {
+    "title_line1": {
+      "font": "display",
+      "font_size_px": 78,
+      "weight": 400,
+      "letter_spacing_px": -5,
+      "line_height": 1.15,
+      "color": "#ffde00",
+      "stroke_px": 2.5,
+      "stroke_color": "#000000",
+      "stroke_alpha": 1,
+      "center_px": [
+        540,
+        396.5
+      ],
+      "max_width_px": 900,
+      "nominal_scale_x": 1.0282,
+      "max_lines": 1
+    },
+    "title_line2": {
+      "font": "display",
+      "font_size_px": 78,
+      "weight": 400,
+      "letter_spacing_px": -5,
+      "line_height": 1.15,
+      "color": "#ffffff",
+      "stroke_px": 2.5,
+      "stroke_color": "#000000",
+      "stroke_alpha": 1,
+      "center_px": [
+        540,
+        497.3
+      ],
+      "max_width_px": 900,
+      "nominal_scale_x": 1,
+      "max_lines": 1
+    },
+    "album": {
+      "font": "display",
+      "font_size_px": 58.336771684,
+      "weight": 400,
+      "letter_spacing_px": -3.889118112,
+      "line_height": 1.15,
+      "color_source": "album_cover_palette",
+      "stroke_px": 3.24093176,
+      "stroke_color": "#000000",
+      "stroke_alpha": 1,
+      "max_width_px": 614,
+      "nominal_scale_x": 1,
+      "max_lines": 2,
+      "overflow": "wrap_then_require_short_album_name",
+      "left_top_px": [
+        357,
+        1377.95763
+      ]
+    },
+    "subtitle": {
+      "font": "subtitle",
+      "font_size_px": 54,
+      "weight": 500,
+      "letter_spacing_px": 2.16,
+      "line_height": 1.15,
+      "color": "#ffffff",
+      "stroke_px": 2.97,
+      "stroke_color": "#000000",
+      "stroke_alpha": 0.84,
+      "shadow": {
+        "x_px": 0,
+        "y_px": 2.7,
+        "blur_px": 11.88,
+        "alpha": 0.72
+      },
+      "center_px": [
+        540,
+        1242
+      ],
+      "max_width_px": 936,
+      "nominal_scale_x": 1,
+      "max_lines": 2,
+      "overflow": "wrap_without_changing_words_or_timing"
+    }
+  },
+  "boxes_px": {
+    "overlay": [
+      72,
+      254,
+      312,
+      312
+    ],
+    "album_cover": [
+      94,
+      1339,
+      264,
+      1509
+    ],
+    "playback": [
+      177,
+      1339,
+      347,
+      1509
+    ],
+    "source_label": [
+      307,
+      1538,
+      774,
+      1597.197183
+    ],
+    "outro": [
+      0,
+      555,
+      1080,
+      1365
+    ]
+  },
+  "brand_assets": {
+    "overlay": "assets/portrait-overlay.png",
+    "source_label_dark": "assets/source-label-dark.png",
+    "source_label_light": "assets/source-label-light.png",
+    "outro": "assets/portrait-outro.mp4"
+  },
+  "playback": {
+    "sticker_id": "7017820454807276814",
+    "native_canvas_width_px": 1080,
+    "asset": "assets/playback.gif"
+  },
+  "album_color_policy": {
+    "algorithm": "cover-accent-hsv-v1",
+    "resize": [
+      128,
+      128
+    ],
+    "saturation_min": 0.3,
+    "value_min": 0.35,
+    "hue_bin_degrees": 10,
+    "output_saturation": 0.93,
+    "output_value": 0.996,
+    "missing_cover": "require_album_accent_hex",
+    "recompute_on_cover_or_policy_hash_change": true
+  },
+  "first_second": {
+    "cover_duration_us": 1000000,
+    "audio_start_us": 0,
+    "text_start_us": 1000000,
+    "source_label_start_us": 1000000
+  },
+  "outro": {
+    "duration_us": 3349000,
+    "duration_policy": "asset_full_duration",
+    "source_start_us": 0,
+    "volume": 1,
+    "background_and_overlay_through_end": true
+  },
+  "copy_policy": {
+    "title_style": "具体人物、动作或关系＋口语化疑问/真实反差；可用“之前/私下/居然/却”连接故事钩子，内容必须兑现，避免空泛结论、虚构因果和无依据夸张。",
+    "title_overflow": "require_rewrite_do_not_reduce_font_size",
+    "album_overflow": "wrap_at_semantic_boundary_then_require_album_display_name",
+    "cover_title": "新生成封面完整标题为两行或三行、至少双色突出重点；重用历史封面时明确标注旧版，不声称已按新规范重生。",
+    "title_style_examples": [
+      "嫁给刘欢前，卢璐到底有多牛",
+      "认识九天就定终身，却被父母逼着写绝交信",
+      "舞台上霸气镇全场的刘欢，私下竟是个“懒汉”",
+      "刘欢拍广告火遍全国，导演居然是卢璐"
+    ],
+    "examples_usage": "只借鉴人物＋动作＋悬念/反差的表达，不把示例人物、经历或断言搬到无关专辑；事实必须来自本集选段。"
+  },
+  "asset_sha256": {
+    "assets/portrait-overlay.png": "42e284c87a91201fc335f9ca56583fd6573ea000491d8aa3e796a04380ce3131",
+    "assets/source-label-dark.png": "0299ded7a97d54faaab6ba0bb689478b5731501bc8ee0d2fa494546d2803a669",
+    "assets/source-label-light.png": "b1262ae99209ef88888740339d05d94f2f44c8565f5e1df46a227eef1ae572e2",
+    "assets/portrait-outro.mp4": "317eb8ed7ba52a78bc446f1067fba5bf439387957d9c161008c0dadc0db6dac8",
+    "assets/playback.gif": "01c29b9b1b0c73dd3151e508a17c494016a43d999ef80b27ea6d48a353e74360",
+    "assets/cover-proportion-reference.png": "e852a7606389e9293b00506d65a88cb51109a94bb8f3db277adbed59f7f773af"
+  },
+  "cover_design": {
+    "policy_id": "two-or-three-line-cover-20261107",
+    "reference_asset": "assets/cover-proportion-reference.png",
+    "reference_scope": "人物比例、构图层级和标题双色强调；不复制参考图上下黑带或超出安全区的文字",
+    "subject": {
+      "role": "album_core_subject",
+      "prominence": "dominant_portrait_or_core_book_event",
+      "critical_focus_region_px": [
+        90,
+        290,
+        820,
+        1130
+      ],
+      "body_may_extend_beyond_focus": true
+    },
+    "album_short_name": {
+      "source_field": "album_core_label",
+      "allowed_placements": [
+        "top",
+        "right"
+      ],
+      "default_placement": "right",
+      "regions_px": {
+        "top": [
+          90,
+          330,
+          990,
+          500
+        ],
+        "right": [
+          830,
+          350,
+          1010,
+          1060
+        ]
+      },
+      "max_glyph_height_px": 144,
+      "hierarchy": "secondary_to_portrait_and_episode_hook"
+    },
+    "episode_title": {
+      "source_field": "cover_title_lines",
+      "region_y_px": [
+        1070,
+        1430
+      ],
+      "max_width_from": "texts.title_line1.max_width_px",
+      "line_colors": [
+        "#ff5633",
+        "#fff1b0",
+        "#fff1b0"
+      ],
+      "min_color_distance_rgb": 100,
+      "allow_overlap_subject_body": true,
+      "keep_face_clear": true,
+      "alignment": "center",
+      "priority": "complete_story_hook",
+      "overflow": "choose_two_or_three_semantic_lines_then_rewrite_complete_title_if_needed",
+      "allowed_line_counts": [
+        2,
+        3
+      ],
+      "line_count_selection": "按完整语义断句与可读性选择两行或三行，不强行挤成两行"
+    },
+    "review": "visual_inspection_with_recorded_bounds_colors_line_count_not_fake_ocr"
+  }
+}
