@@ -87,6 +87,18 @@ def fetch(job: Path, cfg: dict) -> str:
     if cfg.get('master_catalog'):
         import master_catalog
         cfg.update(master_catalog.prepare_cover(job,cfg))
+    track=read_json(job/'cut_plan.json',{}).get('track_id') or cfg.get('requested_track_id')
+    if (cfg.get('user_transcript_path') or cfg.get('ai_doc_path')) and track:
+        if cfg.get('user_transcript_path'):
+            text = document_context.supplied_reference(job,cfg)['supplied_transcript']
+        else:
+            source = job / Path(cfg['ai_doc_path']).expanduser()
+            text = document_context.local_document(source, str(track))['text']
+        local=io.StringIO(newline='');writer=csv.writer(local)
+        writer.writerow(['album_id','track_id','sound_id','transcript','error'])
+        writer.writerow([cfg['album_id'],track,track,text,''])
+        atomic_bytes(job/f"album_{cfg['album_id']}_transcripts.csv",local.getvalue().encode('utf-8-sig'))
+        return ''
     if not cfg.get('csv') and not cfg.get('master_catalog'):
         import xql_catalog
         xql_catalog.ensure_job_catalog(job, cfg)
@@ -155,15 +167,20 @@ def selected_context(job: Path, cfg: dict) -> dict:
     track_id = str(plan.get('track_id', ''))
     record = read_json(album_root(cfg) / 'transcripts' / f'{track_id}.json', {}) if track_id else {}
     supplied_transcript = record.get('text','') if record.get('origin')=='csv' else ''
-    if supplied_transcript:
+    if track_id and (supplied_transcript or (cfg.get('user_transcript_path') and not record.get('blocks'))):
         timed = read_json(album_root(cfg)/'transcripts/timed'/f'{track_id}.json',{})
         if timed: record=timed
     if cfg.get('ai_doc_path'):
         source = Path(cfg['ai_doc_path']).expanduser()
         if not source.is_absolute():
             source = job / source
-        record = document_context.record(track_id, 'local_ai_doc', document_context.normalize_document(read_json(source)))
+        record = document_context.local_document(source, track_id)
     if record and digest(record.get('text', '')) != record.get('content_hash'):
         raise ValueError('共享文稿内容校验失败，请重新fetch_transcripts')
-    return {'track_id': track_id, **document_context.select(record, plan, read_json(job / 'cut_result.json', {})),
-            'dictionary': dictionary(cfg), 'supplied_transcript': supplied_transcript}
+    context={'track_id': track_id, **document_context.select(record, plan, read_json(job / 'cut_result.json', {})),
+            'dictionary': dictionary(cfg), 'supplied_transcript': supplied_transcript,
+            **document_context.supplied_reference(job, cfg)}
+    if context.get('supplied_document'):
+        context['timed_reference_transcript']=context.get('transcript','')
+        context['transcript']=context['supplied_transcript']
+    return context

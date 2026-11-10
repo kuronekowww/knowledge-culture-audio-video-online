@@ -25,6 +25,6 @@ python scripts/draft_verify.py --job-dir /job --orientation portrait --draft /do
 
 报告draft_verification.portrait.json绑定交接/JSON/媒体/校验器版本。结构通过不等于线上渲染视觉或平台审核通过。失败只改对应步骤，保留已成功上游素材。剪映API路径要求MP4时须真实下游导出；用户选择OpenFilm则走[独立输出后端](openfilm-output.md)的本机原生渲染与核验，不声称OpenFilm验证等同剪映端到端验证。
 
-播放贴纸、专辑封面、来源图片的大小与位置全部从layout-profile.json派生，不在此维护第二套参数。原生贴纸只添加一个片段；OpenFilm使用配置锁定的原动画。
+静态唱片PNG、专辑封面、来源图片的大小与位置全部从layout-profile.json派生，不在此维护第二套参数。各后端均使用同一张静态透明图片。
 
-不再编译/发送末尾钩子字幕或“AI示意画面”；音轨从0开始，不全局后移字幕。贴纸显示从1秒起，单次请求先于专辑小封面。旧请求若首秒有文字、角色cta/notice、标题换行或字号16，将被装配前校验拒绝。
+不再编译/发送末尾钩子字幕或“AI示意画面”；音轨从0开始，不全局后移字幕。唱片显示从1秒起，单次请求先于专辑小封面。旧请求若首秒有文字、角色cta/notice、标题换行或字号16，将被装配前校验拒绝。

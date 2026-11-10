@@ -18,10 +18,13 @@ def check(project=None):
     layout.check_assets()
     import cover_policy
     cp=profile['cover_design'];safe=profile['cover_safe_rect_px']
+    crop=profile['cover_center_crop_rect_px'];w=profile['canvas']['width'];h=profile['canvas']['height']
+    expected=[0,(h-w*4/3)/2,w,(h+w*4/3)/2]
+    if crop!=expected or not cover_policy.contains(crop,safe):errors.append('封面安全区必须位于画布中央3:4区域内')
     for box in [cover_policy.title_box(),cp['subject']['critical_focus_region_px'],*cp['album_short_name']['regions_px'].values()]:
         if not cover_policy.contains(safe,box):errors.append('封面构图区域超出最新安全区')
-    if cp['episode_title']['allowed_line_counts']!=[2,3]:errors.append('封面标题未采用用户最新两行或三行规则')
-    if cp['episode_title']['line_colors'][0]==cp['episode_title']['line_colors'][1]:errors.append('封面两行颜色相同')
+    if cp['episode_title']['allowed_line_counts']!=[1,2]:errors.append('封面标题须为一行或两行')
+    if set(cp['album_short_name']['regions_px'])!={'top','left','right'}:errors.append('封面简称需支持左、右、上')
     spec=layout.compile_spec(base)
     for role,box in spec['portrait']['safe_area']['slots_px'].items():
         if not (0<=box[0]<box[2]<=profile['canvas']['width'] and 0<=box[1]<box[3]<=profile['canvas']['height']):errors.append('元素范围越界：'+role)

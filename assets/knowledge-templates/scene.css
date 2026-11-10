@@ -1,10 +1,6 @@
-@font-face{font-family:StoryTitle;src:url('assets/title-font.ttf');font-weight:400}
-@font-face{font-family:StorySubtitle;src:local('PingFangSC-Medium');font-weight:500}
-@font-face{font-family:Body;src:url('assets/body-bold.ttf');font-weight:700}
-@font-face{font-family:Body;src:url('assets/body-regular.ttf');font-weight:400}
+@import url('gallery-fonts.css');
 *{box-sizing:border-box}html,body{margin:0;width:1080px;height:1920px;overflow:hidden;font-family:Body;color:var(--ink)}
-#background{position:absolute;inset:0;background:radial-gradient(ellipse at 95% 0%,#ffffff10,transparent 45%),linear-gradient(160deg,var(--background),var(--background-bottom))}
-#background:after{content:'';position:absolute;inset:0;background-image:radial-gradient(#ffffff10 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(90deg,#000,transparent 25%,transparent 75%,#000)}
+#background{position:absolute;inset:0;background:var(--background)}
 #brand{position:absolute;inset:0;width:1080px;height:1920px;pointer-events:none;z-index:5}
 .canonical{position:absolute;display:flex;align-items:center;justify-content:center;z-index:8}.canonical span{display:block;flex-shrink:0;white-space:pre;font-synthesis:none;paint-order:stroke fill;transform-origin:center center}
 #animation{position:absolute;left:0;top:600px;width:1080px;height:720px;background:var(--paper);overflow:hidden}
@@ -14,7 +10,6 @@
 #module-body{position:absolute;left:72px;top:132px;width:936px;height:420px}
 #module-note{position:absolute;left:72px;right:72px;top:545px;font-size:22px;line-height:1.25;color:#667783}.has-note .takeaway{bottom:30px}
 #subtitle{z-index:10}#album-cover,#playback,#source-label{position:absolute;z-index:7;object-fit:contain}
-#playback{background-image:url('assets/playback-sprite.png');transform-origin:top left}
 .card{background:#fff;border:6px solid #fff;border-radius:24px;box-shadow:0 8px 0 #2638480a,0 12px 18px #26384810}
 .stage{transform-origin:center;will-change:transform,opacity}.pill{display:inline-block;background:var(--accent);color:white;padding:10px 24px;border:5px solid white;border-radius:24px;font-size:36px;font-weight:700;box-shadow:0 6px 12px #293a481a}
 .takeaway{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:36px;font-weight:700;line-height:1.4}.takeaway:before{content:'';display:inline-block;width:12px;height:12px;background:var(--accent);border-radius:50%;margin:0 15px 4px 0}

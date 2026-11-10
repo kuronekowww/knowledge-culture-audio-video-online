@@ -1,23 +1,23 @@
 # 网页动画：图像开场 + 知识模板 + 按需插图
 
-这里是本技能的网页制作路线。先按 [presentation-modes.md](presentation-modes.md)确定模式。继承原声原速、真实字幕、总表声音ID、1080×1920品牌布局和源文件复用，不继承上游通用品牌短片的TTS、BGM、音效或重复确认流程。
+这里是本技能的网页制作路线。先按 [presentation-modes.md](presentation-modes.md)确定模式。继承已选择倍速的原声、真实字幕、总表声音ID、1080×1920品牌布局和源文件复用，不继承上游通用品牌短片的TTS、BGM、音效或重复确认流程。
 
 ## 资源与职责
 
 - `vendor/motion-showreel/`：从 ConardLi/garden-skills 下载的原技能、43种风格及工具，来源版本见同级 `vendor/motion-showreel-source.json`。仅按需读所选风格和技术参考，不将整个上游 SKILL.md 与全部风格载入每集上下文。
-- `assets/knowledge-templates/`：本会话确认的六个常用和两个扩展模板。外层与动画区同色系、深浅分层；字幕不加整条渐变或底板。
+- `assets/knowledge-templates/`：本会话确认的六个常用和两个扩展模板。上下使用固定纯色，和中间动画舞台拉开对比；字幕不加整条渐变或底板。
 - 第一分镜的六种风格与选用规则：[opening-styles.md](opening-styles.md)。这是风格资源，不是已经做好的六支开头视频；每次围绕原声主题设计主体动作。
 - Hyperframes 的 composition 与渲染是独立运行时，不等于 motion-showreel 的 `render(t)`，也不等于 OpenFilm 的 `window.film`。本包提供参考素材和转交入口，执行者制作时须完成真实 composition、预览与输出验收，不能把模板参考页当成片。
 
 ## 1. 复用原声与字幕，建立工作目录
 
-先沿主流程完成取材、选段、原速剪辑与真实字幕核对。`presentation.mode=hyperframes` 时，原流水线在 storyboard 阶段写 `web_animation_request.json` 后转入 Agent 动画待办，不再自动生80–100张图。这是执行者待办，不是重新向用户确认。
+先沿主流程完成取材、选段、按选定倍速准备正文与真实字幕核对。`presentation.mode=hyperframes` 时，原流水线在 storyboard 阶段写 `web_animation_request.json` 后转入 Agent 动画待办，不再自动生80–100张图。这是执行者待办，不是重新向用户确认。
 
 ```bash
 python scripts/prepare_web_video.py --job-dir /真实任务目录 --project-dir /可写目录/网页视频-v1
 ```
 
-命令复制可编辑模板参考并记录原输入与布局绑定；不会生图、渲染或覆盖已有工程。根目录没有生产 index.html，避免误将示例内容导出。已有目录直接续作，输入或布局改变时新建版本。
+先按[生产模板与验收](web-production.md)验证环境并传入`--environment`。准备入口核验真实原声、发布字幕、句段来源与开场真实词级时码、核对回执、文案和输入哈希，生成锁定 Hyperframes 0.9.19 的生产根页面、共用时钟、品牌、字幕和播放页；图例单独放在template-reference。骨架初始状态为authoring_required，不能当成已制作。已有目标不会被覆盖。
 
 在项目中准备 `web-storyboard.json`：每镜含 id、type（opening/template/image）、start/end、真实 source_unit_ids、画面要解释的内容、主体前后状态、动作与下一镜衔接。模板镜头补 template_id 和内容参数；插图镜头补 asset_id；开场补 style、主体、关键动作和风格信号。时码覆盖最终音频，不以估计字数伪造词级同步。
 
@@ -41,7 +41,7 @@ python scripts/prepare_web_video.py --job-dir /真实任务目录 --project-dir 
 
 ## 4. 使用现有故事生图能力插图
 
-复用同一专辑的封面参考、visual_bible、选定画风和 `scripts/generate_images.py`。将确实需要的新人物、情境、物件列入独立 `web-image-manifest.json`，每项独立ID、完整提示词、尺寸、文件名与来源段落；请求明确 `quality="low"`。已有合适图片直接复用。
+团队版按[分镜编译](team-visuals.md)只把正式分镜中 type=image 的待生成镜头编入 web-image-manifest.json。旧任务可手工维护下面的清单。复用同一专辑的封面参考、visual_bible、选定画风和 `scripts/generate_images.py`。将确实需要的新人物、情境、物件列入独立 `web-image-manifest.json`，每项独立ID、完整提示词、尺寸、文件名与来源段落；请求明确 `quality="low"`。已有合适图片直接复用。
 
 ```bash
 python scripts/generate_images.py --manifest /项目/web-image-manifest.json --quality low --dry-run
@@ -56,20 +56,14 @@ python scripts/generate_images.py --manifest /项目/web-image-manifest.json --q
 
 唯一布局参数仍取主技能 `layout-profile.json`，不得把上游1920×1080、字体或品牌版式套到成片。片内视频标题位置不变；喜马拉雅原品牌图层、专辑图/标题、唱片与“内容来源｜喜马拉雅APP”按原区域显示。正文动画或插图只更换主要画面区域，并避开字幕。
 
-外层背景与动画区由同一个专辑主色派生，允许深浅区分；guochao等风格也按当前主色改造，不能一进入开场就变成另一套底色。字幕下方不加整条渐变遮罩或实色底板。上游风格字体只用于画内必要元素，不能替换已锁定的视频标题、专辑名与字幕字体。
+外层包框全片采用一个纯色，以中间动画舞台底色与代表性插图选择对比色；开场与正文沿用。字幕下方不加整条渐变遮罩或实色底板。上游风格字体只用于画内必要元素，不能替换已锁定的视频标题、专辑名与字幕字体。
 
-原声从0播放，原速；不新增TTS、BGM或音效。只有用户另行改变这个要求时才调整。开场、模板与图片共用真实词级时间轴；持续停留由内容需要决定，不能用乱动掩盖缺少信息。
+原声从0播放。1/1.2/1.4倍已在正文素材中落实，工程播放器按1倍播这份素材，片尾按原速；不新增TTS、BGM或音效。只有用户另行改变这个要求时才调整。开场、模板与图片共用最终原声音轨的时钟；逐词动作引用实际词级时间，整句展示可引用已校准的句段；持续停留由内容需要决定，不能用乱动掩盖缺少信息。
 
 ## 6. 实际 Hyperframes 制作与交付
 
-本地准备和运行依赖写项目/可写运行目录，不向技能安装目录自动装 node_modules 或浏览器。先检查本机版本与命令帮助。官方资料（核对于2026-11-07）：[快速开始](https://hyperframes.app/docs/1-startup/2-quickstart)、[CLI](https://hyperframes.app/docs/5-packages/cli)。官方当前要求Node.js 22+与FFmpeg；实际使用时复核安装版本，不自动升级系统软件。
+正式制作从[生产模板与验收](web-production.md)继续：先完成可跳转的图像动作开场、实测原声词锚点、拍板画面和接缝，再展开正文。按输入变动只查开场或相应字幕；交付前检查当前全片一次。实际点击播放并观察时间推进；用户只说“做视频”时默认交工程和播放入口；只有明确要求MP4时才继续导出和核验MP4。不要把普通网页或示例画廊当成Hyperframes成片。
 
-没有可用Hyperframes时，先在工作目录准备项目级依赖，复用已有浏览器缓存；不静默把普通HTML或OpenFilm改名为Hyperframes。使用当前CLI的 `init --example blank --skip-skills --skip-transcribe` 创建生产工程（传真实路径；具体参数以该版本 `--help` 为准），避免自动重复装其他技能或重做字幕。
+网页与剪映/OpenFilm工程是不同产物。另需原生剪辑工程时，复用已核验片段并保留字幕与品牌独立层；不要把HTML直接传给仅接收纯图的旧组装器。
 
-生产根 composition 声明 `data-composition-id`、1080×1920宽高；定时元素按官方规范声明 `class="clip"`、start/duration/track；GSAP timeline 使用 paused 并注册 `window.__timelines`。将开场、正文模板和插图的更新连接到真实渲染时钟；仅暴露 `window.seek()` / `render(t)` 并不足以证明Hyperframes会驱动它。素材与字体本地化，加载完才就绪，时间任意前后跳转必须得到相同画面。
-
-完成后按当前版本CLI执行 lint、snapshot 和 preview；检查开场首/中/尾与接缝、最长标题、最长字幕、所有模板和图片切换。用户已要求最终视频时在当前授权内完成render；只要模板或草稿时停在相应产物，不因上游默认问答重复追问。成片再核验尺寸、帧率、完整解码、原声对齐及实际输出抽帧。
-
-Hyperframes源工程可编辑；MP4仅在真实导出后交付。额外需要剪映/OpenFilm时，按已渲染片段或经过核验的HTML图层导入能力制作对应工程，保留外层品牌/字幕为独立层；不要对旧纯图片组装器传HTML并声称成功。当前 `assemble_video.py` 只接受原纯图片交接，网页模式会提示走本参考，避免错误组装。
-
-状态分别为 `authoring_required`、`preview_ready`、`mp4_exported`、`render_verified`；模板复制与脚本语法检查不能计为后两项。每次只改受影响的镜头/资源，保留原工程和可复用组件。
+网页正式封面与纯图片共用[确认标题、生成封面和中央3:4核对](cover-generation.md)。

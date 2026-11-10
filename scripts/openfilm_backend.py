@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import html
 import json
-import math
 import os
 from pathlib import Path
 import re
@@ -68,40 +67,9 @@ def checked_inputs(job):
     return plan, request, line, assets
 
 
-def sprite(source, target):
-    from PIL import Image
-    with Image.open(source) as im:
-        w, h = im.size
-        n = im.n_frames
-        columns = math.ceil(math.sqrt(n))
-        rows = math.ceil(n / columns)
-        sheet = Image.new('RGBA', (w * columns, h * rows))
-        durations = []
-        bounds = []
-        for i in range(n):
-            im.seek(i)
-            rgba = im.convert('RGBA')
-            sheet.alpha_composite(rgba, ((i % columns) * w, (i // columns) * h))
-            durations.append(max(10, int(im.info.get('duration', 100))))
-            bounds.append(rgba.getchannel('A').getbbox())
-        sheet.save(target)
-    return {'width': w, 'height': h, 'columns': columns, 'rows': rows,
-            'durations_ms': durations, 'alpha_bounds': bounds, 'source_sha256': file_hash(source)}
-
-
 def title_page(text, style, font):
     from layout_html import text_page
     return text_page(text,style,font)
-
-
-def playback_page(info):
-    if info is None:
-        return '''<!doctype html><style>html,body{margin:0;background:transparent}svg{display:block}</style>
-<svg width="280" height="280" viewBox="0 0 280 280"><g id="disc" transform="rotate(0 140 140)"><circle cx="140" cy="140" r="128" fill="#171717" stroke="#565656" stroke-width="3"/><circle cx="140" cy="140" r="86" fill="none" stroke="#333" stroke-width="20"/><path d="M30 116L125 132L125 148L30 164Z" fill="#aaa" opacity=".5"/><circle cx="140" cy="140" r="42" fill="#e22"/><circle cx="140" cy="140" r="15" fill="#111"/></g></svg>
-<script>window.film={width:280,height:280,frame(t){document.getElementById('disc').setAttribute('transform',`rotate(${(t%3)*120} 140 140)`);}};</script>'''
-    w, h = info['width'], info['height']
-    return f'''<!doctype html><style>html,body{{margin:0;background:transparent}}#sprite{{width:{w}px;height:{h}px;background:url('assets/playback-sprite.png');background-size:{w*info['columns']}px {h*info['rows']}px}}</style><div id="sprite"></div>
-<script>const durations={json.dumps(info['durations_ms'])},total=durations.reduce((a,b)=>a+b,0);window.film={{width:{w},height:{h},ready:new Promise((resolve,reject)=>{{const i=new Image();i.onload=resolve;i.onerror=()=>reject(new Error('playback sprite failed to load'));i.src='assets/playback-sprite.png';}}),frame(t){{let ms=((t*1000)%total+total)%total,i=0;while(i<durations.length-1&&ms>=durations[i]){{ms-=durations[i++];}}document.getElementById('sprite').style.backgroundPosition=`${{-(i%{info['columns']})*{w}}}px ${{-Math.floor(i/{info['columns']})*{h}}}px`;}}}};</script>'''
 
 
 def captions(line, font_name):
@@ -126,12 +94,13 @@ def build(job, project, options):
     import caption_api
     line['caption_api']=caption_api.compile_timeline(line)
     profile=layout_profile.load()
+    from team_fonts import resolve_all
+    bound = resolve_all()
     fonts={k:dict(v,project_name=Path(v['asset']).name) for k,v in profile['font_files'].items()}
-    font=layout_profile.ROOT/fonts['display']['asset']
-    sticker=layout_profile.ROOT/profile['playback']['asset'] if line['branding_enabled'] else None
+    font=bound['display']
     signature = digest({'version': VERSION, 'builder_sha256': file_hash(Path(__file__)),
                         'plan': file_hash(job/'handoff_plan.json'), 'request': file_hash(job/'upload_request.json'),
-                        'layout_profile':layout_profile.binding(), 'compiler_sha256':file_hash(SCRIPT_DIR/'layout_profile.py'), 'html_sha256':file_hash(SCRIPT_DIR/'layout_html.py'), 'fonts':fonts, 'font': file_hash(font), 'sticker': file_hash(sticker) if sticker else None,
+                        'layout_profile':layout_profile.binding(), 'compiler_sha256':file_hash(SCRIPT_DIR/'layout_profile.py'), 'html_sha256':file_hash(SCRIPT_DIR/'layout_html.py'), 'fonts':fonts, 'font': file_hash(font), 'playback_mode':profile['playback']['mode'],
                         'equivalent': options.get('allow_equivalent_playback', False),
                         'body_image_mode': mode, 'layer_helper': file_hash(SCRIPT_DIR/'image_layers.py'),
                         'selected_assets': {k: v['sha256'] for k, v in assets.items()}})
@@ -152,14 +121,6 @@ def build(job, project, options):
         atomic_copy(Path(item['path']), project/'assets'/name)
         copied[aid] = 'assets/' + name
     generated=set(copied.values())
-    for f in fonts.values():
-        if f.get('embedding')!='local':
-            atomic_copy(layout_profile.ROOT/f['asset'],project/'assets'/f['project_name'])
-            generated.add('assets/'+f['project_name'])
-    info = None
-    if sticker:
-        info = sprite(sticker, project/'assets/playback-sprite.png')
-        generated.add('assets/playback-sprite.png')
     tracks = []
     def track(name, clips):
         tracks.append(f'<section id="track-{name}">\n' + '\n'.join(clips) + '\n</section>')
@@ -178,15 +139,11 @@ def build(job, project, options):
         generated.add(name)
         track(text['role'], [clip('iframe', text['role'], text['start_us'],text['end_us'],text['style_reference']['safe_box_px'],name)])
     elements = line.get('branding_elements', [])
-    # Top-first: source above small album cover; small cover overlaps the rotating record as before.
-    for role in ('source_label','album_cover'):
+    # Top-first: source above small album cover; small cover overlaps the static record.
+    for role in ('source_label','album_cover','playback'):
         for item in elements:
             if item['role'] == role:
                 track(role,[clip('img',item['asset_id'],item['start_us'],item['end_us'],item.get('box_px'))])
-    for item in elements:
-        if item['kind'] == 'sticker':
-            atomic_bytes(project/'playback.html',playback_page(info).encode());generated.add('playback.html')
-            track('playback',[clip('iframe','playback',item['start_us'],item['end_us'],line['safe_area']['slots_px']['playback'],'playback.html')])
     if line.get('overlay'):
         item=line['overlay'];track('brand',[clip('img',item['asset_id'],item['start_us'],item['end_us'],item.get('box_px'))])
     pictures=[clip('img',x['asset_id'],x['start_us'],x['end_us'],x.get('box_px')) for x in line['frames']]
@@ -210,8 +167,7 @@ def build(job, project, options):
               'body_image_mode':mode,'ignored_legacy_options':[k for k in ('font_file','sticker_gif','allow_equivalent_playback') if k in options],
               'source_assets':{k:{'source':v['path'],'sha256':v['sha256'],'project_path':copied[k]} for k,v in assets.items()},
               'fonts':fonts,'layout_profile':layout_profile.binding(),
-              'playback':{'mode':('original_cached_frames' if sticker else 'equivalent_animation') if any(x['kind']=='sticker' for x in line.get('branding_elements',[])) else 'disabled',
-                          'source':str(sticker) if sticker else None,'sprite':info},
+              'playback':{'mode':'static_png' if line['branding_enabled'] else 'disabled'},
               'generated_sha256':{name:file_hash(project/name) for name in sorted(generated)}}
     atomic_json(manifest_path,manifest)
     return manifest
@@ -233,10 +189,24 @@ def runtime(options):
 
 
 def invoke(project,options,action,extra=()):
+    from team_fonts import resolve_all
     package,env=runtime(options)
+    env['KNOWLEDGE_RESOLVED_FONT_PATHS'] = json.dumps({k:str(v) for k,v in resolve_all().items()})
     command=[options.get('node','node'),str(SCRIPT_DIR/'openfilm_runtime.mjs'),action,str(package),str(project),*map(str,extra)]
     result=subprocess.run(command,env=env,cwd=project)
     if result.returncode:raise RuntimeError(f'OpenFilm {action}失败（退出码{result.returncode}），保留工程和成功分段')
+
+
+def inspected_project(job):
+    r=read_json(job/'openfilm_result.json',{})
+    if not r.get('project_dir'):return None
+    try:
+        p=Path(r['project_dir']);ins=read_json(p/'inspection.json',{})
+        if (ins.get('status')=='preview_verified' and ins.get('input_sha256') and
+                r['request_sha256']==file_hash(job/'upload_request.json') and r['plan_sha256']==file_hash(job/'handoff_plan.json') and
+                all(file_hash(p/n)==sha for n,sha in ins['input_sha256'].items())):return p
+    except (KeyError,OSError,TypeError,ValueError):pass
+    return None
 
 
 def current(job):
@@ -260,23 +230,26 @@ def main():
     parser.add_argument('--job-dir',type=Path,required=True)
     parser.add_argument('--project-dir',type=Path,required=True)
     parser.add_argument('--options',type=Path,help='JSON object of OpenFilm runtime/media options')
-    parser.add_argument('--action',choices=['build','inspect','render','all'],default='build')
+    parser.add_argument('--action',choices=['build','inspect','build-inspect','render','all'])
     parser.add_argument('--range',nargs=2,type=float,metavar=('FROM','TO'))
     parser.add_argument('--workers',type=int,default=1)
     parser.add_argument('--chunk-seconds',type=int,default=60)
     args=parser.parse_args();job=args.job_dir.resolve();project=args.project_dir.resolve()
+    if args.action is None:
+        from delivery import requested
+        args.action='all' if requested(read_json(job/'config.json',{}))['target']=='mp4' else 'build-inspect'
     options=read_json(args.options,{}) if args.options else read_json(job/'config.json',{}).get('openfilm',{})
     if not 1<=args.workers<=4 or not 1<=args.chunk_seconds<=120:parser.error('workers须1～4，chunk-seconds须1～120')
     try:
         with file_lock(project/'.knowledge-build.lock',timeout=2):
-            if args.action in ('build','all'):result=build(job,project,options)
-            if args.action in ('inspect','all'):invoke(project,options,'inspect')
+            if args.action in ('build','build-inspect','all'):result=build(job,project,options)
+            if args.action in ('inspect','build-inspect','all'):invoke(project,options,'inspect')
             if args.action in ('render','all'):
                 extra=[args.workers,args.chunk_seconds]
                 if args.range:extra+=args.range
                 invoke(project,options,'render',extra)
                 result=read_json(project/('sample-result.json' if args.range else 'render-result.json'))
-            if args.action=='inspect':result=read_json(project/'inspection.json')
+            if args.action in ('inspect','build-inspect'):result=read_json(project/'inspection.json')
             result={**result,'backend':'openfilm','project_dir':str(project),
                     'request_sha256':file_hash(job/'upload_request.json'),'plan_sha256':file_hash(job/'handoff_plan.json')}
             atomic_json(job/'openfilm_result.json',result)

@@ -1,6 +1,7 @@
 """One user choice per batch; compile the chosen style into every image prompt."""
 import copy
 import shared_album
+import image_finish
 from artifacts import atomic_json, digest, read_json, file_lock
 
 
@@ -38,35 +39,59 @@ def style_hash(cfg):
     return digest(found)
 
 
-def bind_prompts(job, cfg):
+def bind_prompts(job, cfg, manifest=None):
     choice = selected(cfg)
     path = job/'image_manifest.json'
-    value = read_json(path)
+    value = read_json(path) if manifest is None else manifest
     prefix = '【统一画风（用户选择）】' + choice['style']['prompt'].strip() + '\n'
     old_prefix = value.get('style_prefix', '')
     old_suffix=value.get('cover_title_suffix','')
     import album_visuals
     copy_text=read_json(job/'copy.json')
-    full_title=album_visuals.title(copy_text)
+    import cover_policy
+    old_recipe = read_json(path, {})
+    if image_finish.new_recipe(old_recipe):
+        prefix = image_finish.clean_text(prefix)
+    historical = cover_policy.legacy(job,cfg)
+    full_title=cover_policy.title(copy_text, historical=historical)
     saved=album_visuals.cover_design_record(cfg)
     design=saved.get('design',{})
-    core=copy_text.get('album_core_label') or design.get('core_label')
-    if not isinstance(core,str) or not core.strip():
-        raise ValueError('封面需要copy.album_core_label或专辑设计档案core_label，依据真实专辑确定核心人物/书籍/事件')
-    core=core.strip()
-    import cover_policy
-    suffix=cover_policy.prompt(copy_text,core,design)
+    opt = cover_policy.options(copy_text)
+    old_cover = cover_policy.submitted_r24_cover(job, cfg, old_recipe)
+    previous = (old_cover is not None and old_recipe.get('cover_title_hash')==cover_policy.title_hash(copy_text)
+                and old_recipe.get('cover_options')==opt and old_recipe.get('style_selection_hash')==style_hash(cfg))
+    if previous and manifest is not None:
+        scene = next(row['prompt'] for row in value['images'] if row['id']=='cover_portrait')
+        previous = old_cover['prompt'] == old_recipe['style_prefix'] + scene + old_recipe['cover_title_suffix']
+    core = old_recipe['cover_core_label'] if historical else opt['label']
+    suffix = old_recipe['cover_title_suffix'] if historical or previous else cover_policy.prompt(copy_text,core,design)
     for row in value['images']:
-        prompt = row['prompt']
+        prompt = row['prompt'].removesuffix('\n'+image_finish.RULE)
         if old_prefix and prompt.startswith(old_prefix):
             prompt = prompt[len(old_prefix):]
         if not prompt.strip():
             raise ValueError('镜头描述不能为空')
         if old_suffix and prompt.endswith(old_suffix): prompt=prompt[:-len(old_suffix)]
         row['prompt'] = prefix + prompt + (suffix if row['id']=='cover_portrait' else '')
-        if row['id']=='cover_portrait':row['size']='1080x1920'
+        if row['id']=='cover_portrait':
+            if previous:
+                row.update(old_cover)
+            elif historical:
+                original=next(x for x in old_recipe['images'] if x['id']=='cover_portrait')
+                row.update(size=original['size'])
+                row.pop('cover_fit',None)
+            elif row.get('backend'):
+                row.update(size='1080x1920')  # Authorized imports use the reviewed final canvas.
+                row.pop('cover_fit',None)
+            else:
+                row.update(size='1024x1536', cover_fit='full_width_9x16')
+    if image_finish.new_recipe(old_recipe):
+        suffix = image_finish.clean_text(suffix)
+    image_finish.finish_manifest(value, old_recipe)
     value.update(style_prefix=prefix, style_selection_hash=style_hash(cfg),cover_title_suffix=suffix,cover_title_hash=digest({'title':full_title,'lines':copy_text['cover_title_lines']}))
-    value['cover_policy']=cover_policy.binding()
+    value['cover_policy']=old_recipe['cover_policy'] if historical or previous else cover_policy.binding()
+    if not historical:
+        value['cover_options']=opt
     value['cover_core_label']=core
     value['cover_design_version']=saved.get('version')
     if value != read_json(path):
@@ -83,13 +108,17 @@ def check_bound(job, cfg):
     prefix = '【统一画风（用户选择）】' + choice['style']['prompt'].strip() + '\n'
     import album_visuals
     copy_text=read_json(job/'copy.json')
-    title_hash=digest({'title':album_visuals.title(copy_text),'lines':copy_text['cover_title_lines']})
-    saved=album_visuals.cover_design_record(cfg)
-    core=copy_text.get('album_core_label') or saved.get('design',{}).get('core_label')
     import cover_policy
-    if (value.get('cover_policy')!=cover_policy.binding()
+    historical=cover_policy.legacy(job,cfg)
+    cover_policy.title(copy_text, historical=historical)
+    if value.get('image_finish') == image_finish.VERSION:
+        prefix = image_finish.clean_text(prefix)
+    title_hash=cover_policy.title_hash(copy_text)
+    opt=cover_policy.options(copy_text)
+    previous = cover_policy.submitted_r24_cover(job, cfg, value) is not None
+    if ((not historical and not previous and value.get('cover_policy')!=cover_policy.binding())
             or value.get('cover_title_hash')!=title_hash or value.get('style_selection_hash') != style_hash(cfg)
-            or not core or value.get('cover_core_label')!=core
+            or (not historical and (value.get('cover_options')!=opt or value.get('cover_core_label')!=opt['label']))
             or value.get('style_prefix') != prefix
             or not value.get('images')
             or any(not row.get('prompt', '').startswith(prefix) for row in value['images'])):

@@ -24,6 +24,11 @@ class LayoutTests(unittest.TestCase):
         self.assertNotIn('portrait',p);self.assertEqual(set(p['branding']),{'enabled'})
         self.assertNotIn('outro_seconds',p['timing'])
 
+    def test_reference_mac_glyph_metrics(self):
+        self.assertEqual(layout.load()['font_files']['subtitle']['ttc_face_index'], 20)
+        self.assertAlmostEqual(layout.measure('有声小说武则天从3岁到82岁', 'subtitle'), 721.44)
+        self.assertEqual(layout.fit('武则天：从三岁到八十二岁', 'album')[0], '武则天：从三岁到八十二岁')
+
     def test_long_story_title_rejected_without_reducing_font(self):
         with self.assertRaisesRegex(ValueError,'改写文案'):
             layout.fit('武则天的父亲为什么会请袁天罡到家中来看相','title_line1')
@@ -32,6 +37,54 @@ class LayoutTests(unittest.TestCase):
         text='武则天的父亲请袁天罡看相';fitted,m=layout.fit(text,'title_line1')
         self.assertEqual(fitted,text);self.assertLessEqual(m['paint_width_px'],900)
         self.assertEqual(layout.resolved_style('title_line1',text)[1]['pixel_style']['font_size_px'],78)
+
+    def test_native_sizes_do_not_get_cancelled_by_enlarged_scale(self):
+        from copy import deepcopy
+        p=layout.load()
+        for role,size in {'title_line1':13,'title_line2':13,'subtitle':10,'album':10}.items():
+            with self.subTest(role=role):
+                native=layout.resolved_style(role,'测试文字',p=p)[1]
+                legacy=deepcopy(p)
+                legacy['texts'][role].pop('jianying_font_size')
+                previous=layout.resolved_style(role,'测试文字',p=legacy)[1]
+                self.assertEqual(native['font_size'],size)
+                for key in ('scale_x','scale_y','x','y','font_sha256'):
+                    self.assertEqual(native[key],previous[key])
+
+    def test_final_saved_draft_has_native_size_in_both_text_fields(self):
+        import jianying_profile
+        p=layout.load();requests=[];materials=[];tracks=[]
+        roles={'title_line1':13,'title_line2':13,'subtitle':10,'album':10}
+        texts={'title_line1':'第一行标题','title_line2':'第二行标题','subtitle':'测试字幕','album':'专辑名称'}
+        for role in roles:
+            text,style=layout.resolved_style(role,texts[role])
+            cue={'text':text,'start':1000000,'end':3000000}
+            requests.append({'body':{**style,'captions':json.dumps([cue]),
+                'transform_x':style['x'],'transform_y':style['y']},'verification':{}})
+            materials.append({'id':role,'font_size':99,'content':json.dumps({
+                'text':text,'styles':[{'size':99}]})})
+            tracks.append({'type':'text','segments':[{'material_id':role,
+                'target_timerange':{'start':1000000,'duration':2000000},'clip':{}}]})
+        line={'layout_profile':layout.binding(),'canvas':p['canvas'],
+            'caption_api':{'requests':requests},'frames':[],
+            'album_background':{'asset_id':'background','start_us':0,'end_us':3000000}}
+        data={'materials':{'texts':materials,'videos':[]},'tracks':tracks}
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            for name in ('draft_content.json','draft_info.json'):
+                (root/name).write_text(json.dumps(data))
+            jianying_profile.finalize(root,line,{'background':{'sha256':'fixture'}})
+            for name in ('draft_content.json','draft_info.json'):
+                saved=read_json(root/name)
+                for mat in saved['materials']['texts']:
+                    expected=roles[mat['id']]
+                    self.assertEqual(mat['font_size'],expected)
+                    self.assertTrue(all(s['size']==expected for s in json.loads(mat['content'])['styles']))
+                    self.assertAlmostEqual(mat['line_max_width']*p['canvas']['width'],950 if mat['id']=='subtitle' else 900)
+                    seg=next(t['segments'][0] for t in saved['tracks'] if t['segments'][0]['material_id']==mat['id'])
+                    self.assertEqual(seg['clip']['scale'],{'x':1.,'y':1.})
+                    self.assertEqual(seg['uniform_scale']['value'],1.)
+                    if mat['id']!='album':self.assertTrue(mat['force_apply_line_max_width'])
 
     def test_missing_glyph_is_an_error(self):
         with self.assertRaisesRegex(ValueError,'缺字'):layout.fit('未收录\U00031350','title_line1')
@@ -76,7 +129,7 @@ class LayoutTests(unittest.TestCase):
             Image.new('RGB',(1080,1920),'#202020').save(cover)
             Image.new('RGB',(1536,1024),'#402020').save(raw)
             Image.new('RGB',(1024,1536),'#222222').save(bg);audio.write_bytes(b'unchanged source audio')
-            record={'path':str(bg),'sha256':file_hash(bg),'revision':1,'reference_mode':'user_image','reference_path':str(cover),'reference_sha256':file_hash(cover)}
+            record={'path':str(bg),'sha256':file_hash(bg),'revision':1,'mode':'episode_solid','color':'#222222','reference_mode':'user_image','reference_path':str(cover),'reference_sha256':file_hash(cover)}
             images={'cover_portrait':{'path':str(cover),'sha256':file_hash(cover)},'SH001':{'path':str(raw),'sha256':file_hash(raw)}}
             identity={'highlight_id':'K01','album_id':'1','track_id':'2','summary':'fixture'}
             lines=[]
@@ -101,6 +154,15 @@ class LayoutTests(unittest.TestCase):
                     self.assertEqual(line['frames'][1]['box_px'],[0,600,1080,1320])
                     self.assertEqual(line['outro']['end_us']-line['outro']['start_us'],3349000)
                     self.assertEqual(line['album_background']['end_us'],line['total_duration_us'])
+                    disc=next(r for r in line['branding_elements'] if r['role']=='playback')
+                    self.assertEqual(disc['kind'],'image')
+                    self.assertEqual(disc['box_px'],[177,1339,347,1509])
+                    import assembly_api
+                    published={k:{**v,'url':'https://fixture.invalid/'+k} for k,v in assets.items()}
+                    sequence=assembly_api.compile_timeline(line,published)
+                    self.assertNotIn('add_sticker',[step['endpoint'] for step in sequence['steps']])
+                    with Image.open(assets[disc['asset_id']]['path']) as disk:
+                        self.assertEqual((disk.mode,disk.n_frames),('RGBA',1))
                     source=next(r for r in line['branding_elements'] if r['role']=='source_label')
                     self.assertEqual(source['start_us'],1000000)
                     self.assertEqual(source['end_us'],line['body_duration_us'])

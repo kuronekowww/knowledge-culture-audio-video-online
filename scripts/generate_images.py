@@ -24,6 +24,7 @@ import contextlib
 import contextvars
 import timing
 import image_provenance
+import image_finish
 
 BATCH_GATE = None
 BATCH_DOWNLOADS = None
@@ -35,8 +36,10 @@ DEFAULT_API_BASE = "https://yitian.xmly.work/llm-proxy/api/v1/gpt-image"
 DEFAULT_WORKERS = 3
 DEFAULT_QUALITY = "low"
 MAX_WORKERS = 8
-ALLOWED_SIZES = {"1024x1024", "1024x1536", "1536x1024", "1024x2048", "2048x1024", "1080x1920"}
-ALLOWED_QUALITIES = {"low"}
+PROXY_SIZES = {"1024x1024", "1024x1536", "1536x1024", "1024x2048", "2048x1024"}
+# Old cached assets and explicitly imported files can already use the delivery canvas.
+ALLOWED_SIZES = PROXY_SIZES | {"1080x1920"}
+ALLOWED_QUALITIES = {"low", "medium", "high"}
 
 
 class ManifestError(ValueError):
@@ -126,6 +129,10 @@ def validate_manifest(raw: dict[str, Any], manifest_path: Path) -> dict[str, Any
             raise ManifestError(f"images[{index}].prompt must be a non-empty string")
         if size not in ALLOWED_SIZES:
             raise ManifestError(f"images[{index}].size must be one of: {', '.join(sorted(ALLOWED_SIZES))}")
+        from cover_transport import FIT
+        fit = image.get('cover_fit')
+        if fit is not None and (image_id != 'cover_portrait' or fit != FIT or size != '1024x1536' or Path(filename).suffix.lower() != '.png'):
+            raise ManifestError('最终封面适配需要 cover_portrait、PNG、1024x1536 和 full_width_9x16')
         width, height = map(int, size.split('x'))
         portrait_asset=image_id in {'cover_portrait','album_background'}
         if (portrait_asset and width>=height) or (not portrait_asset and width<=height):
@@ -136,18 +143,28 @@ def validate_manifest(raw: dict[str, Any], manifest_path: Path) -> dict[str, Any
             raise ManifestError(f"duplicate filename: {filename}")
         ids.add(image_id)
         filenames.add(filename.casefold())
-        normalized.append({"id": image_id, "filename": filename, "prompt": prompt, "size": size,
-                           "backend": image.get("backend"), "revision": positive_int(image.get("revision", 1), "revision", 2147483647)})
+        image_quality = image.get('quality',quality)
+        if image_quality not in ALLOWED_QUALITIES:
+            raise ManifestError('invalid per-image quality: '+str(image_quality))
+        normalized.append({**({'quality':image_quality} if 'quality' in image else {}),"id": image_id, "filename": filename, "prompt": prompt, "size": size,
+                           **({"cover_fit":fit} if fit else {}), "backend": image.get("backend"), "revision": positive_int(image.get("revision", 1), "revision", 2147483647)})
 
     return {"output_dir": output_dir, "quality": quality, "max_workers": workers, "download_workers": download_workers, "images": normalized}
 
 
+def check_wire_size(image):
+    if image['size'] not in PROXY_SIZES:
+        raise ManifestError('该尺寸仅用于交付或旧素材，不能提交给生图接口：'+image['size']+
+                            '。新版封面请求 1024x1536，交付 1080x1920。原请求若已超时，请先核对回执。')
+
+
 def request_image(api_base: str, token: str, image: dict[str, str], quality: str, request_timeout: float) -> str:
+    check_wire_size(image)
     response = requests.post(
         f"{api_base.rstrip('/')}/generate",
         headers={"Content-Type": "application/json", "access-token": token},
-        json={"prompt": image["prompt"], "size": image["size"], "quality": quality, "n": 1, "include_b64": False},
-        timeout=request_timeout,
+        json={"prompt": image_finish.finish_prompt(image["prompt"]), "size": image["size"], "quality": quality, "n": 1, "include_b64": False},
+        timeout=(10, request_timeout), allow_redirects=False,
     )
     request_id = next((response.headers.get(k) for k in ('x-request-id','request-id') if response.headers.get(k)), None)
     if not isinstance(request_id,str): request_id=None
@@ -175,8 +192,9 @@ def verify_image(path: Path) -> None:
 
 def image_fingerprint(api_base: str, image: dict, quality: str) -> str:
     basis={"schema":2,"backend":api_base.rstrip('/'),"prompt":image['prompt'],"size":image['size'],
-           "quality":quality,"revision":image.get('revision',1)}
+           "quality":image.get('quality',quality),"revision":image.get('revision',1)}
     if image.get('backend'): basis['actual_backend']=image['backend']
+    if image.get('cover_fit'): basis['cover_fit']=image['cover_fit']
     return digest(basis)
 
 
@@ -217,13 +235,14 @@ def _prepare_one(
     retry_generation: bool = False,
     adopt_existing: bool = False,
 ) -> dict[str, Any] | DownloadTask:
+    quality = image.get("quality",quality)
     target = output_dir / image["filename"]
     record: dict[str, Any] = {
         "id": image["id"],
         "filename": image["filename"],
         "prompt_summary": prompt_summary(image["prompt"]),
         "output_path": str(target),
-        "attempts": 0,
+        "attempts": 0, "quality":quality, "requested_size":image['size'], "read_timeout_seconds":request_timeout,
     }
     fingerprint = image_fingerprint(api_base, image, quality)
     record['fingerprint'] = fingerprint
@@ -235,6 +254,13 @@ def _prepare_one(
         with file_lock(entry / 'task.lock'):
             saved = read_json(receipt, {})
             local = read_json(local_receipt, {})
+            if (saved.get('status') == 'complete' and local.get('fingerprint') == fingerprint
+                    and saved.get('sha256') == local.get('sha256') and verified_file(target, saved.get('sha256'))):
+                # A complete target is already bound to these exact bytes. Repair only a damaged cache copy.
+                verify_image(target)
+                if not verified_file(media, saved['sha256']):
+                    atomic_copy(target, media)
+                return {**record, 'status':'skipped', 'sha256':saved['sha256'], 'size_bytes':target.stat().st_size}
             if verified_file(media, saved.get('sha256')):
                 verify_image(media)
                 atomic_copy(media, target)
@@ -265,39 +291,54 @@ def _prepare_one(
             if retry_generation:
                 url = None
             if not url:
+                check_wire_size(image)
                 if not token:
                     raise ManifestError('GPT_IMAGE_2_TOKEN is required for a new generation')
+                # Normalize at submission, after recovering any paid or unresolved historical request.
+                wire_image = {**image,'prompt':image_finish.finish_prompt(image['prompt'])}
                 provenance={'provider':'gpt_image_proxy','model':'unknown','mode':'api','api_base':api_base,
-                            'prompt':image['prompt'],'requested_size':image['size'],'quality':quality}
+                            'prompt':wire_image['prompt'],'requested_size':image['size'],'quality':quality,'image_finish':image_finish.VERSION}
                 atomic_json(receipt, {'fingerprint': fingerprint, 'status': 'submitting','provenance':provenance})
                 record['attempts'] = 1
+                sent = None
                 try:
                     with timing.span('image_queue', image_id=image['id']):
                         gate = BATCH_GATE or contextlib.nullcontext()
                         gate.__enter__()
                     try:
                         with timing.span('image_request', image_id=image['id']):
-                            url = request_image(api_base, token, image, quality, request_timeout)
+                            sent = time.monotonic()
+                            url = request_image(api_base, token, wire_image, quality, request_timeout)
                     finally:
                         gate.__exit__(None, None, None)
                 except Exception as exc:
                     details=image_provenance.error_details(exc)
+                    details.update(read_timeout_seconds=request_timeout, requested_size=image['size'],
+                                   elapsed_seconds=round(time.monotonic()-sent, 3) if sent is not None else None)
+                    record['diagnosis']=details
                     atomic_json(receipt, {'fingerprint': fingerprint, 'status': 'generation_uncertain',
                                          'provenance':provenance,'error_details':details,'request_id':details['request_id']})
                     raise
                 # Persist the expensive result before the first download attempt.
                 metadata=getattr(url,'metadata',{})
                 provenance['model']=metadata.get('reported_model') or 'unknown'
+                provenance['generation_seconds']=round(time.monotonic()-sent, 3)
+                provenance['read_timeout_seconds']=request_timeout
                 atomic_json(receipt, {'fingerprint': fingerprint, 'status': 'download_pending', 'url': str(url),
                                      'provenance':provenance,'request_id':metadata.get('request_id')})
-            return DownloadTask(record, target, entry, token, download_timeout)
+            return DownloadTask(record, target, entry, token, download_timeout, image.get('cover_fit'))
     except (requests.RequestException, GenerationError, ManifestError, OSError, ValueError) as exc:
-        return {**record, 'status': 'failed', 'error': safe_error(exc, token), 'error_details':image_provenance.error_details(exc)}
+        details = record.get('diagnosis') or image_provenance.error_details(exc)
+        if isinstance(exc, ManifestError) and record['attempts']==0:
+            details = {**details, 'phase':'local_validation','billing_state':'not_submitted',
+                       'next_action':'correct_local_input'}
+        return {**record, 'status':'failed', 'error':safe_error(exc,token),'error_details':details}
 
 
 class DownloadTask:
     """A persisted generation result, completed by a separate download executor."""
-    def __init__(self, record, target, entry, token, timeout):
+    def __init__(self, record, target, entry, token, timeout, cover_fit=None):
+        self.cover_fit = cover_fit
         self.record, self.target, self.entry = record, target, entry
         self.token, self.timeout = token, timeout
         self.queued_at = time.perf_counter()
@@ -322,23 +363,36 @@ class DownloadTask:
                 if saved.get('status') not in {'download_pending', 'complete'} or not saved.get('url'):
                     raise GenerationError('下载凭据发生变化；保留状态供检查，不自动重新生图')
                 url = saved['url']
-                error = None
+                downloaded = entry/'provider-original' if self.cover_fit else media
+                last_error = None
                 for attempt in range(3):
                     try:
-                        with timing.span('download', media='image', image_id=record['id'], attempt=attempt+1):
-                            size_bytes = download_image(url, media, self.timeout)
-                        sha = file_hash(media)
-                        with Image.open(media) as im: actual_size=list(im.size)
-                        provenance={**(saved.get('provenance') or {}),'actual_size':actual_size}
-                        atomic_json(receipt, {**saved,'fingerprint': fingerprint, 'status': 'complete', 'url': url, 'sha256': sha,'provenance':provenance})
-                        atomic_copy(media, target)
-                        atomic_json(local_receipt, {'fingerprint': fingerprint, 'sha256': sha,'provenance':provenance})
-                        return {**record, 'status': 'success', 'sha256': sha, 'size_bytes': size_bytes,
-                                'download_attempts': attempt + 1}
+                        if not (self.cover_fit and verified_file(downloaded, saved.get('native_sha256'))):
+                            with timing.span('download', media='image', image_id=record['id'], attempt=attempt+1):
+                                download_image(url, downloaded, self.timeout)
+                        break
                     except (requests.RequestException, GenerationError, OSError, ValueError) as exc:
-                        error = exc
-                        if attempt < 2: time.sleep(0.5 * 2 ** attempt)
-                raise GenerationError(f'生成结果已保存，下载待重试（不会重新生图）: {error}')
+                        last_error = exc
+                        if attempt < 2:
+                            time.sleep(0.5 * 2 ** attempt)
+                else:
+                    raise GenerationError(f'已获图片 URL；仅下载待恢复：{last_error}')
+                provenance = dict(saved.get('provenance') or {})
+                if self.cover_fit:
+                    from cover_transport import finish
+                    # Persist source before postprocessing; an unexpected service size is inspected locally.
+                    saved['native_sha256'] = file_hash(downloaded)
+                    atomic_json(receipt, saved)
+                    provenance.update(finish(downloaded, media), source_path=str(downloaded))
+                else:
+                    with Image.open(media) as im:
+                        provenance['actual_size'] = list(im.size)
+                sha = file_hash(media)
+                atomic_json(receipt, {**saved,'fingerprint':fingerprint,'status':'complete','url':url,'sha256':sha,'provenance':provenance})
+                atomic_copy(media, target)
+                atomic_json(local_receipt, {'fingerprint':fingerprint,'sha256':sha,'provenance':provenance})
+                return {**record, 'status':'success','sha256':sha,'size_bytes':target.stat().st_size,
+                        'download_attempts':attempt+1}
         except (requests.RequestException, GenerationError, ManifestError, OSError, ValueError) as exc:
             return {**record, 'status': 'failed', 'error': safe_error(exc, self.token),'error_details':image_provenance.error_details(exc,'download')}
 
@@ -386,6 +440,8 @@ def run_batch(
 ) -> dict[str, Any]:
     selected_downloads = positive_int(download_workers if download_workers is not None else config.get("download_workers", 3), "download_workers")
     selected_workers = positive_int(workers, "workers") if workers is not None else config["max_workers"]
+    if quality is not None:
+        config = {**config,"images":[{**row,"quality":quality} for row in config["images"]]}
     selected_quality = quality or config["quality"]
     if selected_quality not in ALLOWED_QUALITIES:
         raise ManifestError(f"quality must be one of: {', '.join(sorted(ALLOWED_QUALITIES))}")
@@ -397,6 +453,9 @@ def run_batch(
             raise ManifestError(f'未知镜头: {sorted(unknown)}')
         images = [i for i in images if i['id'] in only]
     if dry_run:
+        for item in images:
+            if not item.get('backend') and not adopt_existing:
+                check_wire_size(item)
         results = [
             {
                 "id": image["id"],
@@ -422,7 +481,7 @@ def run_batch(
                     token,
                     image,
                     output_dir,
-                    selected_quality,
+                    image.get("quality",selected_quality) if quality is None else selected_quality,
                     request_timeout,
                     download_timeout,
                     cache_dir,
@@ -476,6 +535,20 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         raw = read_manifest(args.manifest)
+        folder = args.manifest.resolve().parent
+        context = read_json(folder/'web-animation-context.json', {})
+        job = Path(context['job_dir']) if context.get('job_dir') else folder
+        cfg = read_json(job/'config.json', {})
+        production_cover = cfg.get('cover_policy_version') == 2 and any(
+            row.get('id') == 'cover_portrait' for row in raw.get('images', []) if isinstance(row, dict))
+        if (production_cover or raw.get('compiled_by') == 'team-v1') and not args.dry_run:
+            import title_review
+            if production_cover:
+                title_review.approved_version(job, cfg)
+            title_review.require(job, cfg)
+            if (not (job/'title_approval.json').is_file() or
+                    raw.get('approved_title_version') != read_json(job/'title_approval.json')['title_version']):
+                raise ManifestError('清单未绑定当前标题，按当前分镜重编提示词')
         config = validate_manifest(raw, args.manifest.resolve())
         report = run_batch(
             config,
@@ -492,7 +565,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 0 if all(result["status"] in {"success", "skipped", "dry_run"} for result in report["results"]) else 1
-    except (ManifestError, OSError) as exc:
+    except (ValueError, OSError) as exc:
         print(f"ERROR: {exc}", file=os.sys.stderr)
         return 2
 

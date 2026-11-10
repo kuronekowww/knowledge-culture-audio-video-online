@@ -154,6 +154,15 @@ def verify(timeline, assets, draft_path):
             check(mat.get('alignment')==style['alignment'],'对齐错误：'+label)
             check(near(mat.get('letter_spacing',0),style.get('letter_spacing',0)*.05),'字间距错误：'+label)
             check(near(mat.get('global_alpha',1),style.get('alpha',1)),'文字不透明度错误：'+label)
+            if style.get('pixel_style'):
+                check(near(mat.get('font_size'),style['font_size']),'文字素材字号错误：'+label)
+                px=style['pixel_style']
+                if 'jianying_max_width_px' in px:
+                    check(near(mat.get('line_max_width'),px['jianying_max_width_px']/canvas['width']),'剪映文字宽度错误：'+label)
+                if px.get('jianying_force_width'):
+                    check(mat.get('force_apply_line_max_width') is True,'未固定指定文字框宽度：'+label)
+                if px.get('jianying_scale_x') == px.get('jianying_scale_y') == 1.0:
+                    check(near(seg.get('uniform_scale',{}).get('value'),1.0),'文字统一缩放不是100%：'+label)
             for part in styles:
                 check(near(part.get('size'),style['font_size']),'字号错误：'+label)
                 if style.get('single_line'):check(not any(c in got['content'].get('text','') for c in ('\n','\r','\u2028','\u2029')),'标题出现换行：'+label)
@@ -161,6 +170,8 @@ def verify(timeline, assets, draft_path):
                 check(part.get('underline',False)==style.get('underline',False),'下划线错误：'+label)
                 if style.get('font_file'):
                     bound=Path(part.get('font',{}).get('path',''))
+                    check(mat.get('font_path')==str(bound) and mat.get('font_name')==style.get('font_postscript'),
+                          '材料字体与内嵌样式或指定字体不一致：'+label)
                     check(bound.is_file() and sha_of(bound)==style['font_sha256'],'实际字体文件未正确绑定：'+label)
                     if bound.is_file():evidence[str(bound)]=sha_of(bound)
                 if style.get('pixel_style'):
@@ -181,6 +192,13 @@ def verify(timeline, assets, draft_path):
                 if want['role']=='frame':
                     if want.get('shot_id'):check(image.width>image.height and want.get('box_px',[None])[0]==0,'正文必须为原始横图全宽独立图层：'+label)
                     else:check(image.size==(canvas['width'],canvas['height']),'封面不是整幅画布：'+label)
+                elif want['role']=='playback':
+                    check(image.n_frames==1 and image.mode=='RGBA' and not got['segment'].get('common_keyframes')
+                          and not got['segment'].get('keyframe_refs'),'唱片必须是无关键帧的单帧透明图片')
+                elif want['role']=='background' and bg.get('mode')=='episode_solid':
+                    from PIL import ImageColor
+                    check(image.mode=='RGB' and image.getextrema()==tuple((v,v) for v in ImageColor.getrgb(bg['color'])),
+                          '包框素材必须为本集选定的单一纯色')
                 elif want['role']=='overlay':check(image.size==(canvas['width'],canvas['height']),'品牌贴片尺寸错误：'+label)
                 elif want['role'] in ('album_cover','source_label'):check(image.width>0 and image.height>0,'品牌图片无效')
                 if timeline.get('safe_area') and want['role'] in ('overlay','album_cover','source_label') and not want.get('box_px'):
@@ -205,10 +223,10 @@ def verify(timeline, assets, draft_path):
     if layers.get('overlay') and layers.get('frame'):
         check(min(layers['overlay'])>max(layers['frame']),'品牌贴片位于画面下方')
     if layers.get('playback') and layers.get('album_cover'):
-        check(max(layers['playback'])<min(layers['album_cover']),'播放贴纸必须在专辑封面下方')
+        check(max(layers['playback'])<min(layers['album_cover']),'唱片图层必须在专辑封面下方')
     if layers.get('source_label'):
         check(min(layers['source_label'])>max(layers.get('playback',[0])+layers.get('album_cover',[0])),
-              '来源图片必须在播放贴纸与专辑小封面上方')
+              '来源图片必须在唱片与专辑小封面上方')
     for role in ('playback','album_cover','source_label'):
         if layers.get(role):check(min(layers[role])>max(layers.get('frame',[0])+layers.get('overlay',[0])),'专辑品牌组件位于正文/贴片下方：'+role)
     base=max(layers.get('frame',[0])+layers.get('overlay',[0])+layers.get('playback',[0])+layers.get('album_cover',[0])+layers.get('source_label',[0]))

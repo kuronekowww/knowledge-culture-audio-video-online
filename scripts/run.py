@@ -38,12 +38,10 @@ import state as state_mod  # noqa: E402
 import shared_album
 import job_versions
 import subtitle_review
-import document_context
 import production_checks
 import storyboard_prepare
 import subtitle_fast
-import transcription_cache
-from artifacts import atomic_json, atomic_copy, digest, file_hash, file_lock, read_json, verified_file
+from artifacts import atomic_json, atomic_copy, digest, file_hash, file_lock, hash_session, read_json, verified_file
 
 
 PY = config.PY
@@ -63,6 +61,26 @@ def fail(stage: str, msg: str) -> int:
 # --------------------------------------------------------------------------- #
 
 def stage_fetch(job: Path, cfg: dict) -> str:
+    # Fetch only the selected track before any creative/paid work; report its real length.
+    if cfg.get('master_catalog'):
+        import master_catalog, entry_preflight, content_selection
+        from download_audio import download_one
+        row = master_catalog.input_row(job, cfg)
+        plan=read_json(job/'cut_plan.json',{})
+        if plan.get('source_audio') and str(plan.get('track_id'))==row['track_id']:
+            source=production_checks.path_at(job,plan['source_audio'])
+            result={'status':'provided','track_id':row['track_id'],'path':str(source)}
+        else:result = download_one(row, job/'audio', False, shared_album.album_root(cfg)/'audio')
+        if result['status'] == 'failed': return '入口音频下载失败：'+result['error']
+        atomic_json(job/'download_result.json', result)
+        length = entry_preflight.probe(Path(result['path']))
+        atomic_json(job/'source_preflight.json', {'track_id':row['track_id'], 'source_audio':result['path'],
+                    'source_sha256':file_hash(Path(result['path'])), 'actual_seconds':length,
+                    **content_selection.speed_options(length, content_selection.speed(plan,cfg)), 'speed_scope':'whole_source',
+                    'duration_ok':length>=content_selection.minimum(), 'content_review':'agent_required',
+                    'delivery':__import__('delivery').requested(cfg)})
+        if length < content_selection.minimum():
+            return f'入口预检：声音{row["track_id"]}真实时长{length:.3f}秒，不足300秒；完整短集也不例外。保留本次来源，不自动换声音。'
     return shared_album.fetch(job, cfg)
 
 
@@ -105,7 +123,7 @@ def stage_download_audio(job: Path, cfg: dict) -> str:
 
 
 def stage_cut_speed(job: Path, cfg: dict) -> str:
-    """按已选完整价值范围裁剪，保留原速；不因超过10分钟截断或加速。"""
+    """Preserve the selected source and build the single final narration clock."""
     plan_path = job / "cut_plan.json"
     if not plan_path.exists():
         return "缺少 cut_plan.json"
@@ -129,59 +147,80 @@ def stage_cut_speed(job: Path, cfg: dict) -> str:
         return "找不到源音频"
 
     import content_selection
-    content_selection.validate(plan)
+    content_selection.validate(plan,cfg)
+    speed = content_selection.speed(plan,cfg)
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
         return "缺少 ffmpeg"
 
     # 用 ffprobe 探测源音频真实时长
-    src_duration = _probe_audio_duration_seconds(str(src_audio))
+    from entry_preflight import probe
+    src_duration = probe(src_audio)
     if not math.isfinite(src_duration) or src_duration <= 0:
         return "源音频时长无效"
+    content_selection.validate_source(plan, src_duration)
+    full = content_selection.selection_mode(plan)=='full_track'
+    if full and speed == 1:
+        content_selection.duration_ok(src_duration)
+        clip={'start':0,'end':src_duration,'speed':1.0,'raw_duration':src_duration,'out_duration':src_duration,
+              'expected_out_duration':src_duration,'output_start':0,'output_end':src_duration}
+        atomic_json(job/'cut_result.json',{'mode':'full_track','processing':'original_bytes','speed':1,
+                    'source_sha256':file_hash(src_audio),'segments':[{'path':str(src_audio.resolve()),'clips':[clip],
+                    'total_out_duration':src_duration}]})
+        return ''
 
     raw_clips = []
-    for clip in plan['clips']:
-        start, end = _to_seconds(clip['start']), _to_seconds(clip['end'])
+    clips = [{'start':0,'end':src_duration}] if full else plan['clips']
+    for clip in clips:
+        start, end = content_selection.seconds(clip['start']), content_selection.seconds(clip['end'])
         if not 0 <= start < end <= src_duration + .001:
             return f'切点超出源音频: {start}..{end} / {src_duration}'
-        raw_clips.append({'start':start, 'end':end, 'speed':1.0})
-    expected_total = sum(c['end']-c['start'] for c in raw_clips)
-    mode = 'continuous' if len(raw_clips) == 1 else 'splice'
+        raw_clips.append({'start':start, 'end':end, 'speed':speed})
+    expected_total = sum(c['end']-c['start'] for c in raw_clips) / speed
+    content_selection.duration_ok(expected_total)
+    mode = 'full_track' if full else 'continuous' if len(raw_clips) == 1 else 'splice'
 
     out_dir = job / "audio" / "cut"
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / "highlight-01.m4a"
+    if speed != 1:
+        from artifacts import digest
+        version = digest([file_hash(src_audio), raw_clips, 'atempo-v1'])
+        out = out_dir / f'body-{version[:24]}.m4a'
     part_meta = []
+    cursor = 0.0
     # Build in isolation so failed conversion leaves the previous final audio intact.
     with tempfile.TemporaryDirectory(prefix='encode-', dir=out_dir) as tmp:
         work = Path(tmp); part_files = []
         for i, c in enumerate(raw_clips, 1):
-            dur = c['end'] - c['start']; speed = c['speed']
-            part = work / f'part-{i:02d}.m4a'
-            # Trim BEFORE tempo; output -t would truncate the already sped-up audio.
+            dur = c['end'] - c['start']
+            single = len(raw_clips) == 1
+            part = work / (f'part-{i:02d}.m4a' if single else f'part-{i:02d}.flac')
             filters = [f'atrim=duration={dur:.9f}', 'asetpts=PTS-STARTPTS']
-            factor = speed
-            while factor > 2:
-                filters.append('atempo=2'); factor /= 2
-            while factor < .5:
-                filters.append('atempo=0.5'); factor /= .5
-            if abs(factor-1) > 1e-9: filters.append(f'atempo={factor:.12g}')
+            if speed != 1:
+                # Flush atempo's last analysis window, then trim to the source-derived sample budget.
+                # This preserves a final consonant and prevents a 420 s / 1.4 job falling below 300 s.
+                samples = round(dur / speed * 48_000)
+                filters.extend(['aresample=48000','apad=pad_dur=0.15',f'atempo={speed:g}',f'atrim=end_sample={samples}'])
+            codec = ['-c:a','aac','-b:a','192k'] if single else ['-c:a','flac']
             command = [ffmpeg, '-y', '-hide_banner', '-loglevel', 'error', '-nostdin',
                        '-ss', f"{c['start']:.9f}", '-t', f'{dur:.9f}', '-i', str(src_audio), '-map', '0:a:0', '-vn',
-                       '-af', ','.join(filters), '-c:a', 'aac', '-b:a', '192k', str(part)]
+                       '-af', ','.join(filters), *codec, str(part)]
             with timing.span('audio_encode', clip=i, speed=speed) as measured:
                 r = _sh(command)
                 if r.returncode or not part.is_file() or not part.stat().st_size:
                     measured['status'] = 'error'
                     return f'剪切变速失败 (段{i}): {r.stderr}'
-                actual = _probe_audio_duration_seconds(str(part))
+                actual = probe(part)
                 if not math.isfinite(actual) or actual <= 0 or abs(actual-dur/speed) > .12:
                     measured['status'] = 'error'
                     return f'剪切变速时长异常 (段{i}): 预期{dur/speed:.3f}s，实际{actual:.3f}s'
             part_files.append(part)
             part_meta.append({'start': c['start'], 'end': c['end'], 'speed': speed,
                               'raw_duration': dur, 'out_duration': round(actual, 6),
-                              'expected_out_duration': round(dur/speed, 6)})
+                              'expected_out_duration': round(dur/speed, 6),
+                              'output_start':round(cursor,6), 'output_end':round(cursor+actual,6)})
+            cursor += actual
         if len(part_files) == 1:
             final = part_files[0]
         else:
@@ -191,17 +230,20 @@ def stage_cut_speed(job: Path, cfg: dict) -> str:
             final = work / 'joined.m4a'
             with timing.span('audio_concat') as measured:
                 r = _sh([ffmpeg, '-y', '-hide_banner', '-loglevel', 'error', '-nostdin',
-                         '-f', 'concat', '-safe', '0', '-i', str(concat_list), '-c', 'copy', str(final)])
+                         '-f', 'concat', '-safe', '0', '-i', str(concat_list), '-c:a', 'aac', '-b:a','192k', str(final)])
                 if r.returncode or not final.is_file() or not final.stat().st_size:
                     measured['status'] = 'error'
                     return f'拼接失败: {r.stderr}'
-        actual_total = _probe_audio_duration_seconds(str(final))
+        actual_total = probe(final)
         tolerance = .12 * len(part_files)
         if (not math.isfinite(actual_total) or actual_total <= 0
                 or abs(actual_total-expected_total) > tolerance):
             return f'最终音频时长异常: 预期{expected_total:.3f}s，实际{actual_total:.3f}s'
+        content_selection.duration_ok(actual_total)
         atomic_copy(final, out)
-    atomic_json(job / 'cut_result.json', {'mode': mode, 'processing': 'single_pass_v1',
+    atomic_json(job / 'cut_result.json', {'mode': mode, 'speed':speed,
+                'processing':'pitch_preserving_atempo_v1' if speed != 1 else 'single_pass_v1',
+                'source_sha256':file_hash(src_audio),'body_sha256':file_hash(out),
                 'segments': [{'path': str(out.resolve()), 'clips': part_meta,
                               'total_out_duration': round(actual_total, 6)}]})
     return ""
@@ -209,14 +251,15 @@ def stage_cut_speed(job: Path, cfg: dict) -> str:
 
 def stage_transcribe(job: Path, cfg: dict) -> str:
     import content_selection
+    content_selection.require_current_speed(job,cfg)
     content_selection.validate_job(job)
-    content_selection.duration_ok(subtitle_review.duration_us(subtitle_review.audio_path(job))/1e6, tolerance=.12)
-    return transcription_cache.transcribe(job, cfg)
+    content_selection.duration_ok(subtitle_review.duration_us(subtitle_review.audio_path(job))/1e6)
+    import caption_routing
+    return caption_routing.select_transcript(job, cfg)
 
 
 def stage_subtitles(job: Path, cfg: dict) -> str:
-    if not subtitle_fast.active(cfg): document_context.ensure_selected(job, cfg)
-    if subtitle_review.ready(job, cfg):
+    if subtitle_review.ready(job, cfg, repair_srt=True):
         return ''
     err = stage_transcribe(job, cfg)
     if err:
@@ -302,6 +345,8 @@ def stage_audit(job: Path, cfg: dict) -> str:
 
 
 def stage_generate_images(job: Path, cfg: dict) -> str:
+    import title_review
+    title_review.require(job, cfg)
     import presentation
     route = presentation.image_pipeline_guard(job, cfg)
     if route: return route
@@ -323,8 +368,6 @@ def stage_generate_images(job: Path, cfg: dict) -> str:
     declared = {image['id']: image for image in data['images']}
     for orientation in config.load_spec()['orientations']:
         job_versions.cover_id(declared, orientation)
-    import album_visuals
-    album_visuals.ensure_background(job,cfg)
     report = generate_images.run_batch(data, os.environ.get(config.GPT_IMAGE_TOKEN_ENV, ''),
         api_base=raw.get('api_base', generate_images.DEFAULT_API_BASE),
         cache_dir=shared_album.album_root(cfg) / 'images', only=cfg.get('images_only'),
@@ -346,6 +389,12 @@ def stage_analyze_highlights(job: Path, cfg: dict) -> str:
     if not (job/'cut_plan.json').is_file():
         return 'AWAITING_REVIEW:Agent按完整价值选段并写cut_plan.json（highlight_id、summary、track_id、clips、content）；无需逐条确认'
     import content_selection
+    err = stage_download_audio(job, cfg)
+    if err: return err
+    import entry_preflight
+    report = entry_preflight.job_report(job, cfg)
+    if not report['ok']:
+        return 'AWAITING_REVIEW:入口预检未通过，查看entry_preflight.json；先修完整性/前言判断和真实范围，不自动换声音'
     content_selection.validate_job(job)
     production_checks.register_selected_highlight(job, cfg)
     return ''
@@ -358,7 +407,11 @@ def stage_storyboard(job: Path, cfg: dict) -> str:
     import creative_options
     try: creative_options.selected(cfg)
     except ValueError as exc: return 'AWAITING_REVIEW:' + str(exc)
-    required = ('storyboard.json', 'copy.json', 'image_manifest.json', 'visual_bible.json')
+    from title_review import PROFILE
+    team = cfg.get('production_profile') == PROFILE
+    required = ('storyboard.json', 'copy.json', 'visual_bible.json')
+    if not team:
+        required += ('image_manifest.json',)
     missing = [name for name in required if not (job/name).is_file()]
     if missing:
         return 'AWAITING_REVIEW:Agent一次写齐分镜产物：' + ', '.join(missing)
@@ -366,11 +419,19 @@ def stage_storyboard(job: Path, cfg: dict) -> str:
     from content_selection import validate_job
     validate_job(job)
     text = read_json(job/'copy.json')
-    album_visuals.title(text)
+    import cover_policy
+    cover_policy.title(text, historical=cover_policy.legacy(job,cfg))
     try: album_visuals.validate_setup(job,cfg)
     except ValueError as exc: return 'AWAITING_REVIEW:'+str(exc)
+    if team:
+        import team_visuals
+        try:
+            team_visuals.compile_job(job, cfg)
+        except ValueError as exc:
+            return 'AWAITING_REVIEW:'+str(exc)
+    else:
+        creative_options.bind_prompts(job, cfg)
     job_versions.validate_story_images(job)
-    creative_options.bind_prompts(job, cfg)
     if not subtitle_review.ready(job, cfg):
         return 'AWAITING_REVIEW:先处理必要字幕项'
     text = read_json(job/'copy.json')
@@ -452,7 +513,7 @@ RUNNERS: dict[str, Callable[[Path, dict], str]] = {
 HUMAN_HINT = {
     "analyze_highlights": "Agent选定剧情后写cut_plan，脚本自动登记固定高光ID，无需用户逐条确认。",
     "download_audio": "按专辑 XQL 清单下载选中 track_id；本地音频通过 cut_plan.source_audio 指定。",
-    "subtitles": "核对subtitle_review_request.json中的术语、数字、引文和语义，再写response并apply。",
+    "subtitles": "核对subtitle_review_request.json中的术语、数字、引文和语义，写response后续跑，脚本会自动套用。",
     "storyboard": "Agent写分镜/文案/图片清单；脚本自动校验时码并绑定。",
     "review_images": "脚本自动校验图片文件、方向和来源版本，无人工审核。",
 }
@@ -565,6 +626,10 @@ def create_job(album_id: str, n_transcripts: int | None, csv_path: str | None = 
     cfg = read_json(job / 'config.json', {})
     if cfg.get('album_id') and str(cfg['album_id']) != album_id:
         raise ValueError('该job-id已属于其他专辑')
+    if not cfg:
+        from title_review import PROFILE
+        cfg['production_profile'] = PROFILE
+        cfg['cover_policy_version'] = 2
     cfg['album_id'] = album_id
     cfg['n_transcripts'] = n_transcripts if n_transcripts is not None else cfg.get('n_transcripts', 100)
     if csv_path:
@@ -583,6 +648,11 @@ def _run_pipeline(job: Path, *, force_stage: str | None = None) -> int:
     job = job.expanduser().resolve()
     state = state_mod.load_state(job)
     cfg = load_job_cfg(job)
+    import title_review
+    wait = title_review.pending(job, cfg)
+    if wait:
+        print(wait['action'])
+        return 0
     import creative_options
     cfg = creative_options.resolve_album(cfg)
     atomic_json(job/'config.json', cfg)
@@ -663,7 +733,7 @@ def _run_pipeline(job: Path, *, force_stage: str | None = None) -> int:
 
 def run_pipeline(job: Path, *, force_stage: str | None = None) -> int:
     job = job.expanduser().resolve()
-    with file_lock(job / '.pipeline.lock', timeout=2), timing.bind(job):
+    with file_lock(job / '.pipeline.lock', timeout=2), timing.bind(job), hash_session():
         try:
             with timing.span('pipeline_attempt') as measured:
                 result = _run_pipeline(job, force_stage=force_stage)
@@ -802,7 +872,6 @@ def main() -> int:
                 print(result['status'])
                 return 0 if result['status'] == 'passed' else 3
             else:
-                if not subtitle_fast.active(cfg): document_context.ensure_selected(job, cfg)
                 err = stage_transcribe(job, cfg)
                 if not err:
                     request = subtitle_review.prepare(job, cfg)

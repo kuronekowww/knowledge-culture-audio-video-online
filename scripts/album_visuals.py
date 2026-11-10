@@ -1,14 +1,9 @@
-"""Album-scoped, once-generated background and grounded cover-text inspection."""
-import copy
-import os
+"""Album cover references, episode solid frames, and grounded cover inspection."""
 from pathlib import Path
 import creative_options
 import generate_images
 import shared_album
 from artifacts import atomic_copy, atomic_json, digest, file_hash, file_lock, read_json, verified_file
-
-BACKGROUND_GUIDE = """生成全专辑共用的无文字竖版氛围底图，采用已确认专辑画风。边角纹理向内自然延伸：左右约四分之一宽度、顶部和底部可见稀疏、低对比的材质与装饰，不能只缩在最外侧窄边。逐渐淡入中央，中央约一半宽度及中段横向视频区域依然安静清爽，标题和专辑信息区域可以清晰排字。不要铺满密集重复花纹。无人物、单集情节、文字、汉字、数字、题字、书名、作者、logo、水印、播放键、边框、UI或占位框。主题装饰应来自本专辑参考，不把某一专辑蓝金红的配色强套到其他专辑。"""
-
 
 def root(cfg): return shared_album.album_root(cfg)/'visual_assets'
 
@@ -29,7 +24,7 @@ def remember_cover_design(job,cfg):
         if existing:return existing
         proposal=read_json(job/'cover_design.json',{})
         design=proposal.get('design') if isinstance(proposal,dict) else None
-        needed=('core_label','core_subject','visual_tone','composition','title_logic','safe_crop')
+        needed=('core_subject','visual_tone','composition','title_logic','safe_crop')
         if not isinstance(design,dict) or any(not str(design.get(k,'')).strip() for k in needed):
             raise ValueError('首次封面核对后须写job/cover_design.json的design，记录主体、调性、构图、标题逻辑和安全区')
         basis=inspection_basis(job,cfg)
@@ -51,19 +46,12 @@ def title(copy_text):
 
 
 def background_state(job,cfg):
-    folder=root(cfg)
-    try: record=find_record(job,cfg,require_file=False)
-    except ValueError: record=read_json(folder/'background.json',{})
-    path=Path(record.get('path') or folder/'missing.png')
-    settings=cfg.get('album_visuals',{})
-    ref=settings.get('reference_image') if isinstance(settings,dict) else None
-    if ref:
-        reference=Path(ref).expanduser();reference=reference if reference.is_absolute() else job/reference
-        reference_hash=file_hash(reference) if reference.is_file() else record.get('reference_sha256')
-    else: reference_hash=record.get('reference_sha256')
-    return {'settings':settings,'reference_sha256':reference_hash,'style_hash':creative_options.style_hash(cfg),
-            'record':record,'actual_sha256':file_hash(path) if path.is_file() else None,
-            'review':read_json(folder/'reviews'/(str(record.get('key','missing'))+'.json'),{})}
+    state=read_json(Path(job)/'body-frame.json', {})
+    settings=cfg.get('album_visuals', {})
+    ref=settings.get('reference_image') or state.get('reference_path')
+    reference=Path(job)/Path(ref).expanduser() if ref else None
+    return {'record':state, 'actual_sha256':file_hash(Path(state['path'])) if state.get('path') and Path(state['path']).is_file() else None,
+            'reference_sha256':file_hash(reference) if reference and reference.is_file() else None}
 
 
 def find_record(job,cfg,require_file=True):
@@ -87,7 +75,18 @@ def find_record(job,cfg,require_file=True):
     raise ValueError('共用底图尚未就绪或来源/版本已变，请resume恢复同一版本，不盲目重生')
 
 
-def current(job,cfg): return find_record(job,cfg)
+def current(job,cfg):
+    from solid_frame import materialize
+    path=job/'image_manifest.json'
+    manifest=generate_images.validate_manifest(read_json(path),path.resolve())
+    by_id={r['id']: r for r in manifest['images']}
+    shots=read_json(job/'storyboard.json')['shots']
+    scenes=[{'id':s['id'],'path':manifest['output_dir']/by_id[s['id']]['filename']} for s in shots]
+    frame=materialize(job,scenes)
+    value={**validate_setup(job,cfg),**frame}
+    if value!=read_json(job/'body-frame.json',{}):
+        atomic_json(job/'body-frame.json',value)
+    return value
 
 
 def reference_source(job,cfg,previous=None):
@@ -125,145 +124,118 @@ def album_cover_path(record):
 
 
 def validate_setup(job,cfg):
-    try: return current(job,cfg)
-    except ValueError: pass
-    options=cfg.get('album_visuals',{})
-    if not isinstance(options,dict): raise ValueError('album_visuals须为对象')
-    try: return find_record(job,cfg,require_file=False)
-    except ValueError: pass
-    source=reference_source(job,cfg)
-    if not isinstance(options.get('background_prompt'),str) or not options['background_prompt'].strip():
-        raise ValueError('首次底图需填写已确认画风下的background_prompt')
-    if source['reference_mode']=='user_image' and not str(options.get('reference_summary','')).strip():
-        raise ValueError('真实封面需填写reference_summary视觉分析')
-    return source
-
-
-def ensure_background(job,cfg):
-    """No episode title/track enters its key; a single album lock spans the paid call."""
-    folder=root(cfg);settings=copy.deepcopy(cfg.get('album_visuals',{}))
-    if not isinstance(settings,dict):raise ValueError('album_visuals须为对象')
-    with file_lock(folder/'.background.lock',timeout=900):
-        latest=read_json(folder/'background.json',{})
-        try: previous=find_record(job,cfg,require_file=False)
-        except ValueError: previous=latest
-        try:
-            return current(job,cfg)
-        except ValueError:
-            pass
+    # Cache real album references independently of retired artwork backdrops.
+    folder=root(cfg)/'references'
+    ref_file=folder/(creative_options.style_hash(cfg)+'.json')
+    with file_lock(ref_file.with_suffix('.lock')):
+        previous=read_json(ref_file,{})
+        if not previous:
+            try: previous=find_record(job,cfg,require_file=False)
+            except ValueError: pass
         origin=reference_source(job,cfg,previous)
-        reference=Path(origin['reference_path']) if origin['reference_path'] else None
-        ref_hash=origin['reference_sha256']
-        revision=settings.get('background_revision',previous.get('revision',1))
-        if type(revision) is not int or revision<1:raise ValueError('background_revision须为正整数')
-        style=creative_options.style_hash(cfg)
-        changed=bool(previous and (ref_hash!=previous['reference_sha256'] or style!=previous['style_hash'] or revision!=previous['revision']))
-        if changed:
-            confirmation=settings.get('regeneration_confirmation',{})
-            if revision<=previous['revision'] or confirmation.get('confirmed_by')!='user' or not str(confirmation.get('evidence','')).strip():
-                raise ValueError('更换底图需递增background_revision并记录实际用户修改要求；不随声音重复生成')
-        size=settings.get('background_size',previous.get('size','1024x1536'))
-        key=digest({'album_id':str(cfg['album_id']),'reference_sha256':ref_hash,'style_hash':style,'revision':revision})
-        home=folder/'versions'/key
-        manifest=home/'image_manifest.json'
-        # Keep the first prompt snapshot stable across jobs and retries of the same album version.
-        if not manifest.is_file():
-            summary=settings.get('reference_summary') or ('未提供专辑封面；使用用户已确认的文字画风，不声称分析过原图' if origin['reference_mode']=='style_only' else '')
-            direction=settings.get('background_prompt')
-            if not isinstance(summary,str) or not summary.strip() or not isinstance(direction,str) or not direction.strip():
-                raise ValueError('首次底图需填写实际来源说明与background_prompt')
-            reference_copy=None
-            if reference is not None:
-                reference_copy=folder/'references'/(ref_hash+reference.suffix.lower())
-                atomic_copy(reference,reference_copy)
-            prompt='【统一画风（用户确认）】'+creative_options.selected(cfg)['style']['prompt']+('\n【封面视觉分析】' if reference is not None else '\n【文字画风来源】')+summary+'\n'+direction+'\n'+BACKGROUND_GUIDE
-            raw={'output_dir':'generated','quality':'low','api_base':settings.get('api_base',cfg.get('image_api_base',generate_images.DEFAULT_API_BASE)),'images':[{'id':'album_background','filename':'album-background.png','size':size,'prompt':prompt,'revision':revision}]}
-            generate_images.validate_manifest(raw,manifest.resolve())
-            atomic_json(manifest,raw)
-            atomic_json(home/'reference.json',{**origin,'reference_path':str(reference_copy) if reference_copy else None,'reference_summary':summary,'revision':revision})
-        raw=read_json(manifest);data=generate_images.validate_manifest(raw,manifest.resolve())
-        report=generate_images.run_batch(data,os.environ.get('GPT_IMAGE_2_TOKEN',''),api_base=raw.get('api_base',generate_images.DEFAULT_API_BASE),
-            cache_dir=shared_album.album_root(cfg)/'images')
-        if any(row['status']=='failed' for row in report['results']):raise ValueError('共用底图生成/下载待恢复，查看共享目录回执，不重新付费提交')
-        image=data['output_dir']/'album-background.png'
-        receipt=read_json(image.parent/'.receipts/album_background.json',{})
-        if not verified_file(image,receipt.get('sha256')):raise ValueError('共用底图缺少真实生成凭据')
-        with generate_images.Image.open(image) as im:
-            if im.width>=im.height:raise ValueError('共用底图实际必须竖向')
-        basis=read_json(home/'reference.json')
-        record={'schema':1,'album_id':str(cfg['album_id']),'revision':revision,'key':key,'style_hash':style,
-                'reference_mode':basis.get('reference_mode','user_image'),'reference_sha256':ref_hash,'reference_path':basis['reference_path'],'source_reference_path':basis.get('source_reference_path',basis['reference_path']),'size':raw['images'][0]['size'],
-                'path':str(image),'sha256':file_hash(image),'fingerprint':receipt['fingerprint'],'provenance':receipt.get('provenance')}
-        if previous and changed:atomic_json(folder/'history'/(previous['key']+'.json'),previous)
-        if not latest or revision>=latest.get('revision',0): atomic_json(folder/'background.json',record)
-        else: atomic_json(folder/'history'/(record['key']+'.json'),record)
-        return record
+        if not origin.get('reference_path'):
+            return origin
+        source=Path(origin['reference_path'])
+        target=folder/(origin['reference_sha256']+source.suffix.lower())
+        if not verified_file(target,origin['reference_sha256']):
+            atomic_copy(source,target)
+        origin['reference_path']=str(target.resolve())
+        if not previous or origin.get('source_reference_path')!=str(target.resolve()):
+            if read_json(ref_file,{})!=origin:
+                atomic_json(ref_file,origin)
+        return origin
 
 
 def inspection_basis(job,cfg):
     data=generate_images.validate_manifest(read_json(job/'image_manifest.json'),(job/'image_manifest.json').resolve())
     cover=next(x for x in data['images'] if x['id']=='cover_portrait')
     image=data['output_dir']/cover['filename']
-    return {'image_sha256':file_hash(image),'fingerprint':generate_images.image_fingerprint(read_json(job/'image_manifest.json').get('api_base',generate_images.DEFAULT_API_BASE),cover,'low'),
-            'episode_title':title(read_json(job/'copy.json')),
-            'cover_policy':__import__('cover_policy').binding()}
+    import cover_policy
+    raw=read_json(job/'image_manifest.json')
+    copy_text=read_json(job/'copy.json')
+    historical=cover_policy.legacy(job,cfg)
+    previous = cover_policy.submitted_r24_cover(job,cfg,raw) is not None
+    basis={'image_sha256':file_hash(image), 'fingerprint':generate_images.image_fingerprint(
+           raw.get('api_base',generate_images.DEFAULT_API_BASE),cover,'low'),
+           'episode_title':cover_policy.title(copy_text,historical=historical),
+           'cover_policy':raw['cover_policy'] if historical or previous else cover_policy.binding()}
+    if not historical:
+        basis['options']=cover_policy.options(copy_text)
+        if cfg.get('cover_policy_version')==2:
+            from title_review import approved_version
+            basis['title_version']=approved_version(job,cfg)
+    return basis
 
 
 def validate_inspections(job,cfg):
     """Agent performs these inspections; this function never invents a visual pass."""
     background=current(job,cfg)
-    bg_review=read_json(root(cfg)/'reviews'/(background['key']+'.json'),{})
-    if (bg_review.get('sha256')!=background['sha256'] or bg_review.get('no_text') is not True or bg_review.get('center_clear') is not True
-            or not str(bg_review.get('reviewer','')).strip() or not str(bg_review.get('evidence','')).strip()):
-        raise ValueError('请执行者查看一次专辑底图，写共享reviews/<background.key>.json（sha256/no_text/center_clear/reviewer/evidence）；不是再次向用户提问')
     cover_review=read_json(job/'cover_review.json',{})
     if (cover_review.get('basis')!=inspection_basis(job,cfg) or cover_review.get('title_exact') is not True
             or not str(cover_review.get('reviewer','')).strip() or not str(cover_review.get('evidence','')).strip()):
         raise ValueError('请执行者查看本集封面并核对标题，写cover_review.json（basis/title_exact/reviewer/evidence），不伪造OCR或用户批准')
-    import config
-    safe=config.load_spec()['portrait']['safe_area']
+    import cover_policy
+    copy_text=read_json(job/'copy.json')
     layout=cover_review.get('layout',{})
-    if (layout.get('profile')!=safe['profile'] or layout.get('canvas')!=[1080,1920]
-            or layout.get('full_bleed') is not True):
-        raise ValueError('封面需1080×1920满幅构图复核：在cover_review.layout记录当前profile/canvas/full_bleed及主体和标题边界')
-    rect=safe['rect_px']
-    core=read_json(job/'copy.json').get('album_core_label') or cover_design_record(cfg).get('design',{}).get('core_label')
-    if (not core or layout.get('core_label')!=core or layout.get('core_label_exact') is not True
-            or layout.get('core_subject_present') is not True):
-        raise ValueError('封面须实际核对专辑核心主体与顶部/右侧的次级专辑简称；不能用本集配角代替专辑主角')
-    for key in ('subject_bounds_px','title_bounds_px','core_label_bounds_px'):
-        boxes=layout.get(key)
-        if not isinstance(boxes,list) or not boxes:raise ValueError('封面缺少目视边界记录：'+key)
-        for box in boxes:
-            if (not isinstance(box,list) or len(box)!=4 or not all(isinstance(v,(int,float)) for v in box)
-                    or not (rect[0]<=box[0]<box[2]<=rect[2] and rect[1]<=box[1]<box[3]<=rect[3])):
-                raise ValueError('封面主体或完整标题超出顶部13%/底部25%/左右5%安全区：'+key)
-    __import__('cover_policy').validate_review(layout,read_json(job/'copy.json')['cover_title_lines'])
+    historical=cover_policy.legacy(job,cfg)
+    if layout.get('canvas')!=[1080,1920] or layout.get('full_bleed') is not True:
+        raise ValueError('核对实际最终封面的1080×1920尺寸和满幅背景')
+    if historical:
+        # Do not relabel a previously reviewed cover as conforming to the new design.
+        if (layout.get('cover_policy')!=cover_review['basis']['cover_policy']
+                or layout.get('core_label_exact') is not True or layout.get('face_or_core_detail_clear') is not True):
+            raise ValueError('历史封面缺少原图对应的真实检查记录')
+    else:
+        previous = cover_review['basis']['cover_policy'] == cover_policy.R24_BINDING
+        expected_profile = cover_policy.R24_PROFILE if previous else cover_policy.layout_profile.load()['id']
+        if layout.get('profile')!=expected_profile:
+            raise ValueError('请用当前模板的封面检查请求记录目测结果')
+        cover_policy.validate_review(layout,copy_text['cover_title_lines'],copy_text,previous=previous)
+    from title_review import PROFILE
+    if cfg.get('production_profile') == PROFILE:
+        import team_visuals
+        manifest = job/'image_manifest.json'
+        data = generate_images.validate_manifest(read_json(manifest), manifest.resolve())
+        live = team_visuals.sample_basis(team_visuals.sample(job, data))
+        review = cover_review.get('body_sample', {})
+        if review.get('basis') != live or review.get('passed') is not True or not str(review.get('observation','')).strip():
+            raise ValueError('结合封面检查开头、中段、末尾三张正文图，核对原声、画风、主体与无字；在同一回执记录 body_sample。')
     return background
 
 
 def review_request(job,cfg):
+    from image_finish import REVIEW
     import config
     record=current(job,cfg)
     basis=inspection_basis(job,cfg)
     raw=read_json(job/'image_manifest.json')
     data=generate_images.validate_manifest(raw,(job/'image_manifest.json').resolve())
     cover=next(x for x in data['images'] if x['id']=='cover_portrait')
-    (root(cfg)/'reviews').mkdir(parents=True,exist_ok=True)
     import cover_policy
     profile,policy=cover_policy.settings()
-    result={'schema':2,'cover_policy':cover_policy.binding(),
+    previous = basis['cover_policy']==cover_policy.R24_BINDING
+    safe_area = dict(config.load_spec()['portrait']['safe_area'])
+    if previous:
+        safe_area['profile'] = cover_policy.R24_PROFILE
+    result={'schema':2,'cover_policy':basis['cover_policy'],
             'proportion_reference_path':str((cover_policy.layout_profile.ROOT/policy['reference_asset']).resolve()),
             'expected_title_lines':read_json(job/'copy.json')['cover_title_lines'],
-            'expected_line_colors':policy['episode_title']['line_colors'][:len(read_json(job/'copy.json')['cover_title_lines'])],'title_box_px':cover_policy.title_box(),
+            'cover_options':cover_policy.options(read_json(job/'copy.json')),'title_box_px':cover_policy.R24_TITLE_BOX if previous else cover_policy.title_box(),
             'cover_path':str(data['output_dir']/cover['filename']),'expected_title':basis['episode_title'],
-            'safe_area':config.load_spec()['portrait']['safe_area'],
+            'safe_area':safe_area,
             'cover_design_reference':cover_design_record(cfg),
-            'expected_core_label':read_json(job/'copy.json').get('album_core_label') or cover_design_record(cfg).get('design',{}).get('core_label'),
+            'expected_core_label':cover_policy.options(read_json(job/'copy.json'))['label'],
             'cover_basis':basis,'cover_review_output':str(job/'cover_review.json'),
             'background_path':record['path'],'background_sha256':record['sha256'],'background_key':record['key'],
-            'background_review_output':str(root(cfg)/'reviews'/(record['key']+'.json')),
-            'instruction':'实际查看后记录cover_review的basis/title_exact/reviewer/evidence，以及layout.profile/canvas/full_bleed/core_label/core_label_exact/core_subject_present/subject_bounds_px/title_bounds_px/core_label_bounds_px；另记录layout.cover_policy、每行title_bounds_px/title_line_colors、core_label_placement/core_label_max_glyph_height_px、dominant_core_subject/face_or_core_detail_clear；标题按文案为两行或三行。边界与颜色为目视标注，不冒充OCR。background: sha256/no_text/center_clear/reviewer/evidence。'}
+            'body_frame_color':record['color'],
+            'instruction':'查看最终9:16及中央3:4裁图后，记录 basis/title_exact/reviewer/evidence，layout 填 profile、canvas、full_bleed、cover_policy、subject_bounds_px、focus_point_px、title_bounds_px、dominant_core_subject、face_or_core_detail_clear；有简称时补 core_label、core_label_exact、core_label_placement、core_label_bounds_px、core_label_max_glyph_height_px。有指定重点色时记录 title_line_colors、accent_line。包框纯色由脚本计算。'+REVIEW}
+    from title_review import PROFILE
+    if cfg.get('production_profile') == PROFILE:
+        import team_visuals
+        sample = team_visuals.sample(job, data)
+        result['body_sample'] = {'shots':sample,'basis':team_visuals.sample_basis(sample),
+            'instruction':'执行者在同一次封面检查中打开这三张图，比较预期场景、画风和人物连续性，核对无文字/水印、无明显畸形。在 cover_review.body_sample 记录 basis、passed 与具体 observation。有缺陷只修对应镜头。'+REVIEW}
+    result['crop_preview']=cover_policy.crop_preview(job,Path(result['cover_path']),basis['image_sha256'])
     atomic_json(job/'visual_review_request.json',result)
     return result
 

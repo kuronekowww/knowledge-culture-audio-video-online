@@ -82,7 +82,7 @@ def validate_presentation(timeline):
                 raise ValueError('文字模板版本过期；重新编译交接')
     for element in timeline.get('branding_elements',[]):
         if element['start_us'] < (policy.get('source_label_start_us',cutoff) if element['role']=='source_label' else cutoff):raise ValueError('首秒不显示专辑小封面或播放动图')
-        if 'segments' in element:raise ValueError('旧播放GIF循环已停用，请重新prepare/publish为单个原生贴纸')
+        if 'segments' in element:raise ValueError('旧播放GIF循环已停用，请重新prepare/publish为一层静态唱片PNG')
 
 
 def compile_timeline(timeline):

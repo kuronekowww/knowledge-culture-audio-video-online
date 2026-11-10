@@ -1,5 +1,5 @@
 """Compile editable scene inputs against the installed story-layout authority."""
-import colorsys, copy, hashlib, json, re, sys
+import colorsys, json, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -9,11 +9,22 @@ def write(name, value):
     (ROOT/name).write_text(json.dumps(value, ensure_ascii=False, indent=2)+'\n')
 
 binding = read('config/layout-binding.json')
-profile = Path(binding['source_path'])
-assert hashlib.sha256(profile.read_bytes()).hexdigest()==binding['sha256'], '故事布局已更新：先迁移模板绑定，不能静默沿用旧位置'
+profile = (ROOT/binding['source_path']).resolve()
+
 sys.path.insert(0, str(profile.parent/'scripts'))
 import layout_profile as lp
+from PIL import ImageColor
+from solid_frame import choose_color
 lp.check_assets()
+layout = lp.load()
+if set(layout['font_files']) != {'display','subtitle'}:
+    raise ValueError('模板需要标题与字幕两种校准字体')
+css=[]
+for family, role in [('StoryTitle','display'),('StorySubtitle','subtitle'),('Body','subtitle')]:
+    font=layout['font_files'][role]
+    source=json.dumps(font['postscript'])
+    css.append(f"@font-face{{font-family:{family};src:local({source});font-weight:{font['weight']}}}")
+(ROOT/'gallery-fonts.css').write_text('\n'.join(css)+'\n',encoding='utf-8')
 examples = read('config/scene-inputs.json')
 albums = read('config/album-inputs.json')
 types = {'concept','dialogue','compare','chain','steps','boundary','sample','trend'}
@@ -24,7 +35,9 @@ def color(value):
 def palette(accent):
     color(accent);h,l,s=colorsys.rgb_to_hls(*(int(accent[i:i+2],16)/255 for i in (1,3,5)))
     def shade(sat,light):return '#'+''.join(f'{round(v*255):02x}' for v in colorsys.hls_to_rgb(h,light,sat))
-    return {'accent':accent,'background':shade(min(.6,s*.85),.18),'background_bottom':shade(min(.6,s*.85),.12),'paper':shade(min(.45,s*.75),.925),'ink':shade(min(.3,s),.23),'secondary':shade(min(.3,s*.45),.58),'highlight':'#ECC76F'}
+    paper=shade(min(.45,s*.75),.925)
+    frame=choose_color([ImageColor.getrgb(paper)])
+    return {'accent':accent,'background':frame,'paper':paper,'ink':shade(min(.3,s),.23),'secondary':shade(min(.3,s*.45),.58),'highlight':'#ECC76F'}
 for a in albums.values():
     a['display'], a['style'] = lp.resolved_style('album',a['display'],lp.album_color(ROOT/a['cover'])['hex'])
     a['theme']=palette(a['theme']['accent'])
@@ -75,6 +88,9 @@ for e in examples:
     for c in e.get('theme_override',{}).values():color(c)
     e['timing_status']='design_preview_only_not_audio_aligned'
 write('config/examples.json',examples);write('config/albums.json',albums)
-kit={'layout':read('config/story-layout.snapshot.json'),'playback':read('config/playback.json'),'albums':albums,'examples':examples}
+write('config/story-layout.snapshot.json',layout)
+binding.update(lp.binding())
+write('config/layout-binding.json',binding)
+kit={'layout':layout,'albums':albums,'examples':examples}
 (ROOT/'config.js').write_text('window.KNOWLEDGE_KIT = '+json.dumps(kit,ensure_ascii=False)+';\n')
 print(json.dumps({'examples':len(examples),'albums':len(albums),'layout':binding['id'],'font_and_geometry':'verified'},ensure_ascii=False))

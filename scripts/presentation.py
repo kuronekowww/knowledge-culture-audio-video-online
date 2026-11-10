@@ -1,11 +1,13 @@
 """Keep presentation choice separate from delivery backend and paid image work."""
 from pathlib import Path
 import re
-from artifacts import atomic_json
+from artifacts import atomic_json, read_json
 
 ROOT = Path(__file__).resolve().parent.parent
 MODES = ('hyperframes', 'images')
 OPENING_STYLES = ('guochao', 'flat-vector', 'comic-pop', 'paper-cut', 'editorial-collage', 'ukiyo-e')
+WEB_HANDOFF = ('cut_plan.json','cut_result.json','copy.json','subtitle_review_request.json','subtitle_review.json',
+               'final_transcript.json','final_transcript.meta.json','subtitles.csv')
 
 def selected(cfg):
     value = cfg.get('presentation')
@@ -28,6 +30,7 @@ def web_request(job, cfg):
     choice = selected(cfg)
     if choice['mode'] != 'hyperframes':
         return None
+    from content_selection import speed
     payload = {
         'status': 'awaiting_agent_web_animation',
         'presentation': choice,
@@ -35,8 +38,11 @@ def web_request(job, cfg):
         'template_assets': str(ROOT/'assets/knowledge-templates'),
         'opening_style_root': str(ROOT/'vendor/motion-showreel/references/styles'),
         'next_script': str(ROOT/'scripts/prepare_web_video.py'),
-        'audio_policy': 'reuse_final_original_audio_and_reviewed_timestamps',
+        'audio_policy': 'reuse_prepared_narration_at_timeline_speed_1_and_final_word_timestamps',
+        'narration_speed': speed(read_json(Path(job)/'cut_plan.json', {}), cfg),
         'automatic_story_image_batch': False,
+        'delivery':__import__('delivery').requested(cfg),
+        'required_inputs':list(WEB_HANDOFF),
         'note': '转入网页动画制作待办；这不是再次询问用户，也不是成片就绪。'
     }
     atomic_json(Path(job)/'web_animation_request.json', payload)

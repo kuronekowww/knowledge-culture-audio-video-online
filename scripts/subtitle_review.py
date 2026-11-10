@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import io
 import math
-import subprocess
 import unicodedata
 from pathlib import Path
 
@@ -19,7 +19,7 @@ import shared_album
 import subtitle_candidates as candidates
 import timing
 import subtitle_segmentation as segmentation
-from artifacts import atomic_bytes, atomic_json, digest, file_hash, file_lock, read_json
+from artifacts import atomic_bytes, atomic_json, digest, file_hash, file_lock, read_json, verified_file
 from audit_text import load_rejected_terms, scan_text
 
 VERSION = 3
@@ -71,15 +71,14 @@ def audio_path(job: Path) -> Path:
 
 
 def duration_us(path: Path) -> int:
-    r = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
-        '-of', 'default=noprint_wrappers=1:nokey=1', str(path)],
-        check=True, capture_output=True, text=True, timeout=30)
-    return micros(r.stdout.strip())
+    from entry_preflight import probe
+    return micros(probe(path))
 
 
 def units_from_asr(data: dict, duration: int) -> list[dict]:
     """Use actual segment/word boundaries; never interpolate by text length."""
     candidates = []
+    block_ids_by_index = {}
     if isinstance(data.get('transcription'), list):
         for row in data['transcription']:
             if 'offsets' in row:
@@ -91,11 +90,17 @@ def units_from_asr(data: dict, duration: int) -> list[dict]:
             candidates.append((row['text'], start, end, 'whisper_segment'))
     elif isinstance(data.get('segments'), list):
         for row in data['segments']:
+            begin=len(candidates)
             words = row.get('words', [])
             if words and normalized(''.join(w.get('word', w.get('text', '')) for w in words)) == normalized(row['text']):
                 candidates.extend((w.get('word', w.get('text', '')), micros(w['start']), micros(w['end']), 'word') for w in words)
             else:
-                candidates.append((row['text'], micros(row['start']), micros(row['end']), 'segment'))
+                origin='document_segment' if (data.get('backend')=='verified_timed_document'
+                        and row.get('timing_source')=='document_segment') else 'segment'
+                candidates.append((row['text'], micros(row['start']), micros(row['end']), origin))
+            if data.get('backend')=='verified_timed_document' and row.get('block_ids'):
+                for i in range(begin,len(candidates)):
+                    block_ids_by_index[i+1]=row['block_ids']
     elif isinstance(data.get('timestamp'), list):
         texts = data.get('text', '').split()
         if len(texts) != len(data['timestamp']):
@@ -137,7 +142,8 @@ def units_from_asr(data: dict, duration: int) -> list[dict]:
             pending_zero = []
         units.append({'id': f'U{len(units)+1:05d}', 'text': text,
                       'start_us': start, 'end_us': end, 'timing_source': source,
-                      'raw_segment_ids': raw_ids, 'timing_notes': notes})
+                      'raw_segment_ids': raw_ids, 'timing_notes': notes,
+                      **({'document_block_ids':block_ids_by_index[index]} if index in block_ids_by_index else {})})
         previous = end
     if not units or pending_zero:
         raise ValueError('ASR没有有效文字及时间边界')
@@ -148,6 +154,12 @@ def suggested_cues(units: list[dict]) -> list[dict]:
     """Timing-grounded draft only; the reviewer chooses semantic boundaries."""
     groups, current = [], []
     for unit in units:
+        if unit.get('timing_source')=='document_segment':
+            if current:
+                groups.append(current)
+                current=[]
+            groups.append([unit])
+            continue
         if current and unit['start_us'] - current[-1]['end_us'] > segmentation.POLICY['pause_candidate_ms'] * 1000:
             groups.append(current)
             current = []
@@ -163,6 +175,8 @@ def suggested_cues(units: list[dict]) -> list[dict]:
 
 
 def current_basis(job: Path, cfg: dict) -> dict:
+    import content_selection
+    content_selection.require_current_speed(job,cfg)
     source = audio_path(job)
     raw = job / 'final_transcript.json'
     provenance = read_json(job / 'final_transcript.meta.json', {})
@@ -172,14 +186,20 @@ def current_basis(job: Path, cfg: dict) -> dict:
         raise ValueError('ASR来源未绑定当前音频；先运行transcribe，旧稿不能仅凭存在放行')
     context = shared_album.selected_context(job, cfg)
     settings = cfg.get('asr', {})
-    identity = asr_backend.identity(cfg)
-    if provenance.get('backend_identity') != identity:
-        raise ValueError('ASR后端、模型或运行版本变化，请先运行transcribe')
-    if provenance.get('asr_settings_hash') != digest(settings):
-        raise ValueError('ASR参数已变化或缺少版本记录，请先运行transcribe')
-    prompt = asr_backend.prompt(cfg, context['dictionary'])
-    if provenance.get('prompt_hash') != digest(prompt):
-        raise ValueError('专名提示已变化，请先运行transcribe')
+    if provenance.get('source_kind')=='verified_timed_document':
+        import caption_routing
+        report=caption_routing.current_report(job,cfg,provenance)
+        identity={'backend':caption_routing.TIMED,'source_recipe':report['recipe'],
+                  'report_hash':provenance['route_report_hash']}
+    else:
+        identity = asr_backend.identity(cfg)
+        if provenance.get('backend_identity') != identity:
+            raise ValueError('ASR后端、模型或运行版本变化，请先运行transcribe')
+        if provenance.get('asr_settings_hash') != digest(settings):
+            raise ValueError('ASR参数已变化或缺少版本记录，请先运行transcribe')
+        prompt = asr_backend.prompt(cfg, context['dictionary'])
+        if provenance.get('prompt_hash') != digest(prompt):
+            raise ValueError('专名提示已变化，请先运行transcribe')
     return {'schema': VERSION, 'audio_sha256': audio_sha, 'asr_sha256': raw_sha,
             'asr_settings_hash': digest(settings), 'backend_identity': identity,
             'context_hash': digest(context), 'terms_sha256': file_hash(config.SKILL_DIR / 'references/rejected-terms.csv'),
@@ -193,18 +213,29 @@ def prepare(job: Path, cfg: dict) -> dict:
     basis = current_basis(job, cfg)
     units = units_from_asr(read_json(job / 'final_transcript.json'), duration_us(audio_path(job)))
     context = shared_album.selected_context(job, cfg)
+    if basis['backend_identity'].get('backend')=='verified_timed_document':
+        import caption_routing, document_context
+        context=caption_routing.mapped_reference(context,read_json(job/caption_routing.REPORT),
+                                               document_context.caption_document(job,cfg,fetch=False))
     terms = load_rejected_terms(config.SKILL_DIR / 'references/rejected-terms.csv')
     request = {'basis': basis, 'audio_path': str(audio_path(job).resolve()), 'units': units,
                'context': context, 'matched_terms': scan_text(join_text([u['text'] for u in units]), terms),
                'rules_path': str(config.SKILL_DIR / 'references/growth-review-rules.md'),
                'review_contract': str(config.SKILL_DIR / 'references/subtitle-review.md'),
                'response_contract': {'preferred': 'accept_patches',
-                   'accept': '无问题项只返回candidate_id，程序复用候选原文',
+                   'accept': '审核完全部候选后写 remaining，只在 patches 列出修改项；也支持逐项 candidate_id 数组',
                    'patches': '仅问题项输出修正；仍需完整语义、内容与分句检查',
                    'legacy_full_cues_supported': True},
                'segmentation_policy': segmentation.POLICY,
                'suggested_cues': suggested_cues(units),
                'alignment_issues': [u['id'] for u in units if u['end_us']-u['start_us'] > segmentation.POLICY['max_seconds'] * 1_000_000]}
+    if basis['backend_identity'].get('backend')=='verified_timed_document':
+        report=read_json(job/'caption_source_report.json')
+        request['timing_source']={'route':report['route'],'report':str(job/'caption_source_report.json'),
+                'wordless_observations':[r for r in report.get('phrase_alignment',[])
+                        if r.get('status')=='no_words_detected'
+                        and r['end_us']-r['start_us']>=segmentation.POLICY['max_seconds']*1_000_000],
+                'gap_review':'对列出的无词区间逐个听实际正文。无漏话时用 gap_checks 逐项记录 start_us/end_us 和 observation；若含漏话在该窗重新识别后再核对。'}
     # Keep a snapshot stable while an external reviewer is preparing a delta response.
     previous = read_json(job / 'subtitle_review_request.json', {})
     if previous.get('basis') == basis and previous.get('units') == units:
@@ -250,6 +281,13 @@ def csv_bytes(cues: list[dict]) -> bytes:
     return out.getvalue().encode('utf-8-sig')
 
 
+def srt_bytes(csv_data):
+    rows = csv.DictReader(io.StringIO(csv_data.decode('utf-8-sig')))
+    blocks = [f"{i}\n{row['start'].replace('.', ',')} --> {row['end'].replace('.', ',')}\n{row['text']}\n"
+              for i, row in enumerate(rows, 1)]
+    return ('\n'.join(blocks)+'\n').encode('utf-8-sig')
+
+
 def coverage_failure(job,request,response,number,expected,actual):
     from collections import Counter
     source=[u['id'] for u in request['units']]
@@ -276,7 +314,25 @@ def apply_review(job: Path, cfg: dict, response_path: Path | None = None) -> dic
         raise ValueError('必须记录实际reviewer')
     if any(response.get('checks', {}).get(name) is not True for name in CHECKS):
         raise ValueError('专名、语义、内容、时码、简体及分句检查均须由审核者完成')
+    gaps=(request.get('timing_source') or {}).get('wordless_observations',[])
+    if gaps:
+        checked=response.get('gap_checks',[])
+        if not isinstance(checked,list) or any(not isinstance(row,dict) for row in checked):
+            raise ValueError('gap_checks 须对应每个已实听的无词区间')
+        expected={(row['start_us'],row['end_us']) for row in gaps}
+        actual={(row.get('start_us'),row.get('end_us')) for row in checked
+                if row.get('no_missing_speech') is True and str(row.get('observation') or '').strip()}
+        if expected!=actual or len(checked)!=len(expected):
+            raise ValueError('请实听 timing_source.wordless_observations，逐项记录 gap_checks：start_us/end_us/no_missing_speech/observation；缺字的区间须补对齐')
     submitted_response = response
+    if response.get('accept') == 'remaining':
+        try:
+            patched = {cid for change in response.get('patches', []) for cid in change['candidate_ids']}
+        except (KeyError, TypeError) as exc:
+            raise ValueError('patches 须为含 candidate_ids 的修改项数组') from exc
+        response = {**response, 'accept': [row['candidate_id'] for row in request['suggested_cues']
+                                          if row['candidate_id'] not in patched]}
+    accepted = response.get('accept', [])
     response = candidates.expand(request, response)
     raw_units = request['units']
     unit_map = {u['id']: u for u in raw_units}
@@ -355,7 +411,7 @@ def apply_review(job: Path, cfg: dict, response_path: Path | None = None) -> dic
                 'audio_modified': False, 'review_scope': 'subtitles_only',
                 'wordlist_mode':cfg.get('content_wordlist_mode','contextual'), 'wordlist_hits':hits,
                 'decision_summary': {'format': 'full_cues' if 'cues' in submitted_response else 'accept_patches',
-                    'accepted_candidates': len(submitted_response.get('accept', [])),
+                    'accepted_candidates': len(accepted),
                     'patched_candidates': sum(len(p.get('candidate_ids', [])) for p in submitted_response.get('patches', [])),
                     'output_cues': len(cues)},
                 'cues': cues, 'changes': changes, 'pending': pending,
@@ -373,6 +429,8 @@ def apply_review(job: Path, cfg: dict, response_path: Path | None = None) -> dic
     if status == 'passed':
         data = csv_bytes(cues)
         atomic_bytes(job / 'subtitles.csv', data)
+        atomic_bytes(job / 'subtitles.srt', srt_bytes(data))
+        reviewed['srt_sha256'] = file_hash(job / 'subtitles.srt')
         reviewed['subtitles_sha256'] = file_hash(job / 'subtitles.csv')
         candidates.save_verified(request, response, shared_album.album_root(cfg))
         cached = shared_album.album_root(cfg) / 'subtitle-reviews' / request['request_hash']
@@ -384,13 +442,32 @@ def apply_review(job: Path, cfg: dict, response_path: Path | None = None) -> dic
     return reviewed
 
 
-def ready(job: Path, cfg: dict) -> bool:
+def checked_srt(job, reviewed, *, repair=False):
+    expected = reviewed.get('srt_sha256')
+    path = job / 'subtitles.srt'
+    if not expected or verified_file(path, expected):
+        return True
+    csv_path = job / 'subtitles.csv'
+    if not repair or not csv_path.is_file():
+        return False
+    data = csv_path.read_bytes()
+    if hashlib.sha256(data).hexdigest() != reviewed.get('subtitles_sha256'):
+        return False
+    rendered = srt_bytes(data)
+    if hashlib.sha256(rendered).hexdigest() != expected:
+        return False
+    atomic_bytes(path, rendered)
+    return True
+
+
+def ready(job: Path, cfg: dict, *, repair_srt=False) -> bool:
     import subtitle_fast
     if subtitle_fast.active(cfg): return subtitle_fast.ready(job, cfg)
     try:
         reviewed = read_json(job / 'subtitle_review.json', {})
         return (reviewed.get('status') == 'passed' and reviewed.get('basis') == current_basis(job, cfg)
-                and file_hash(job / 'subtitles.csv') == reviewed.get('subtitles_sha256'))
+                and file_hash(job / 'subtitles.csv') == reviewed.get('subtitles_sha256')
+                and checked_srt(job, reviewed, repair=repair_srt))
     except (OSError, ValueError, KeyError, TypeError):
         return False
 

@@ -1,0 +1,10 @@
+{
+  "name": "knowledge-video", "private": true,
+  "scripts": {
+    "dev": "hyperframes preview --background",
+    "status": "hyperframes preview --status",
+    "check": "hyperframes check --json",
+    "render": "hyperframes render --output renders/final.mp4 --fps 30"
+  },
+  "devDependencies": {"hyperframes":"0.9.19","gsap":"3.15.1"}
+}

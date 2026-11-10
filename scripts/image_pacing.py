@@ -8,7 +8,7 @@ def recommendation(duration):
     minimum=max(1,math.ceil(duration*80/600));maximum=max(minimum,math.ceil(duration*100/600))
     target=min(maximum,max(minimum,round((duration-1)/7)))
     return {'body_seconds':duration,'body_images_min':minimum,'body_images_target':target,'body_images_max':maximum,
-            'target_seconds_per_image':7,'cover_images':1,'album_background':'one per album, reused; excluded from per-voice count'}
+            'target_seconds_per_image':7,'cover_images':1,'album_background':'one local solid colour per episode; no image request'}
 
 
 def validate(shots,duration):

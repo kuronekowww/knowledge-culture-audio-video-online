@@ -5,12 +5,14 @@ local finalizer uses actual font files; it must run before draft verification.
 """
 import json
 from pathlib import Path
-from artifacts import atomic_copy, atomic_json, file_hash
+from artifacts import atomic_json, file_hash
 import layout_profile
 
 
 def finalize(folder,line,assets):
+    from team_fonts import resolve_all
     folder=Path(folder);layout_profile.check_assets()
+    local_fonts=resolve_all()
     if line.get('layout_profile')!=layout_profile.binding():raise ValueError('草稿布局绑定过期')
     expected={}
     for request in line['caption_api']['requests']:
@@ -19,12 +21,7 @@ def finalize(folder,line,assets):
             expected[key]={**request['body'],**request['verification']}
     font_files={}
     for role,desc in layout_profile.load()['font_files'].items():
-        source=layout_profile.ROOT/desc['asset']
-        if desc.get('embedding')=='local':target=source
-        else:
-            target=folder/'assets/fonts'/source.name
-            atomic_copy(source,target)
-        font_files[desc['sha256']]=str(target.resolve())
+        font_files[desc['sha256']]=str(local_fonts[role])
     for name in ('draft_content.json','draft_info.json'):
         path=folder/name
         if not path.is_file():continue
@@ -67,7 +64,9 @@ def finalize(folder,line,assets):
                 seg['clip']['scale']={'x':s['scale_x'],'y':s['scale_y']}
                 mat.update(font_path=font,font_name=s['font_postscript'],font_title=s['font_postscript'],font_id='',font_resource_id='',font_size=s['font_size'],
                            letter_spacing=s['letter_spacing']*.05,line_spacing=.02+s['line_spacing']*.05,
-                           line_max_width=px['max_width_px']/line['canvas']['width'],force_apply_line_max_width=False)
+                           line_max_width=px.get('jianying_max_width_px',px['max_width_px'])/line['canvas']['width'],
+                           force_apply_line_max_width=px.get('jianying_force_width',False))
+                seg['uniform_scale']={'on':True,'value':1.0}
                 for part in content['styles']:
                     part['font']={'id':'','path':font};part['size']=s['font_size']
                     part['strokes']=[{'content':{'solid':{'alpha':px['stroke_alpha'],'color':[0,0,0]}},'width':px['stroke_px']/px['font_size_px']}]
@@ -80,5 +79,5 @@ def finalize(folder,line,assets):
         if count!=len(expected):raise ValueError('需绑定字体的文字数量不一致')
         atomic_json(path,data)
     atomic_json(folder/'knowledge-layout.json',{'layout_profile':layout_profile.binding(),
-        'fonts':font_files,'font_sha256':{v:file_hash(Path(v)) for v in font_files.values()},
+        'fonts':font_files, 'font_policy':'receiver_local', 'font_sha256':{v:file_hash(Path(v)) for v in font_files.values()},
         'scope':'font binding and deterministic draft parameters; native editor visual review separate'})

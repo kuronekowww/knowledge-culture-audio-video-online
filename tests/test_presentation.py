@@ -48,17 +48,16 @@ class PresentationTests(unittest.TestCase):
             self.assertEqual(presentation.image_pipeline_guard(Path(t),config('images')),'')
             self.assertFalse((Path(t)/'web_animation_request.json').exists())
 
-    def test_prepare_keeps_demo_separate_and_refuses_overwrite(self):
+    def test_prepare_collects_missing_inputs_and_refuses_existing_target(self):
         with tempfile.TemporaryDirectory() as t:
             job=Path(t)/'job';job.mkdir();(job/'config.json').write_text(json.dumps(config()))
             project=Path(t)/'web'
-            out=prepare_web_video.prepare(job,project)
-            self.assertFalse(out['rendered']);self.assertEqual(out['status'],'authoring_required')
-            self.assertFalse((project/'index.html').exists())
-            self.assertTrue((project/'template-reference/index.html').is_file())
-            self.assertTrue((project/'template-reference/REFERENCE_ONLY.txt').is_file())
-            marker=project/'keep.txt';marker.write_text('manual edits')
-            with self.assertRaises(ValueError):prepare_web_video.prepare(job,project)
+            with self.assertRaises(ValueError) as caught:prepare_web_video.prepare(job,project)
+            for name in ('subtitles.csv','subtitle_review.json','final_transcript.json'):
+                self.assertIn(name,str(caught.exception))
+            self.assertFalse(project.exists())
+            project.mkdir();marker=project/'keep.txt';marker.write_text('manual edits')
+            with self.assertRaisesRegex(ValueError,'已存在'):prepare_web_video.prepare(job,project)
             self.assertEqual(marker.read_text(),'manual edits')
 
     def test_preferred_styles_are_present(self):

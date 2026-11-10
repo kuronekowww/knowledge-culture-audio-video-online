@@ -5,15 +5,14 @@
     "cover": "assets/album-54445254.jpg",
     "theme": {
       "accent": "#527A99",
-      "background": "#222f3a",
-      "background_bottom": "#172026",
+      "background": "#101820",
       "paper": "#e8ecf0",
       "ink": "#293d4c",
       "secondary": "#8596a2",
       "highlight": "#ECC76F"
     },
     "style": {
-      "font_size": 15,
+      "font_size": 10,
       "font": null,
       "text_color": "#1271fe",
       "border_color": "#000000",
@@ -33,12 +32,12 @@
         969.37953412,
         1446.6653833166001
       ],
-      "font_file": "assets/fonts/jiangxizhuokai.ttf",
+      "font_file": "jiangxizhuokai.ttf",
       "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
       "font_postscript": "jiangxizhuokai-Regular",
       "layout_profile": {
-        "id": "portrait-user-20261107-r18",
-        "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+        "id": "portrait-team-20261110-clean-raised-cover-r25",
+        "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
       },
       "pixel_style": {
         "font": "display",
@@ -58,6 +57,8 @@
           357,
           1377.95763
         ],
+        "jianying_font_size": 10,
+        "jianying_max_width_px": 900,
         "color": "#1271fe",
         "resolved_scale_x": 1
       },
@@ -74,15 +75,14 @@
     "cover": "assets/album-70349771.jpg",
     "theme": {
       "accent": "#3676B8",
-      "background": "#192e43",
-      "background_bottom": "#101e2d",
+      "background": "#101820",
       "paper": "#e4ecf4",
       "ink": "#293a4c",
       "secondary": "#7a93ae",
       "highlight": "#ECC76F"
     },
     "style": {
-      "font_size": 15,
+      "font_size": 10,
       "font": null,
       "text_color": "#1278fe",
       "border_color": "#000000",
@@ -102,12 +102,12 @@
         969.37953412,
         1513.7526707532002
       ],
-      "font_file": "assets/fonts/jiangxizhuokai.ttf",
+      "font_file": "jiangxizhuokai.ttf",
       "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
       "font_postscript": "jiangxizhuokai-Regular",
       "layout_profile": {
-        "id": "portrait-user-20261107-r18",
-        "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+        "id": "portrait-team-20261110-clean-raised-cover-r25",
+        "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
       },
       "pixel_style": {
         "font": "display",
@@ -127,6 +127,8 @@
           357,
           1377.95763
         ],
+        "jianying_font_size": 10,
+        "jianying_max_width_px": 900,
         "color": "#1278fe",
         "resolved_scale_x": 1
       },

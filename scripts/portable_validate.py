@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any, Iterator
 from urllib.parse import urlparse
 
+from portable_fonts import font_map, update_text_fonts
+
 
 MEDIA_EXTENSIONS = {
     ".jpg", ".jpeg", ".jpe", ".png", ".gif", ".webp", ".bmp", ".tif", ".tiff", ".heic", ".heif",
@@ -82,6 +84,22 @@ def validate(draft_dir: Path) -> dict[str, Any]:
             else:
                 data_by_file[name] = data
 
+    layout_path = draft_dir / "knowledge-layout.json"
+    font_count = 0
+    if layout_path.exists():
+        try:
+            layout = load_json(layout_path, errors)
+            if layout:
+                fonts = font_map(layout, draft_dir)
+                if set(fonts) != set(fonts.values()):
+                    errors.append("字体清单仍指向制作电脑，请在接收机重新导入")
+                for data in data_by_file.values():
+                    update_text_fonts(data, fonts, check_only=True)
+                font_count = len(fonts)
+            if len(data_by_file) == 2 and data_by_file[JSON_FILES[0]] != data_by_file[JSON_FILES[1]]:
+                errors.append("draft_content 与 draft_info 不一致，请选择同一次保存的草稿")
+        except (ValueError, KeyError, TypeError, OSError) as exc:
+            errors.append(str(exc))
     metadata_path = draft_dir / "draft_meta_info.json"
     if metadata_path.is_file():
         metadata = load_json(metadata_path, errors)
@@ -123,6 +141,7 @@ def validate(draft_dir: Path) -> dict[str, Any]:
         "ok": not errors,
         "errors": errors,
         "media_count": len(media_paths),
+        "font_count": font_count,
         "checked_files": sorted(checked_files),
     }
 

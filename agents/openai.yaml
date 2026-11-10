@@ -1,4 +1,4 @@
 interface:
   display_name: "泛价值原声视频（知识·心理·故事）"
   short_description: "原声转竖版视频，可选图像动画开场加知识模板，或故事生图方式"
-  default_prompt: "使用 $knowledge-culture-audio-video-online，按声音ID把原声制作成价值视频；先沿用或询问网页动画与纯图片方式，心理知识内容用图像动画开场和可复用模板，故事内容用生图，保持原声与统一品牌布局。"
+  default_prompt: "使用 $knowledge-culture-audio-video-online，按我提供的声音 ID 批量做喜马拉雅竖版视频。给我看每条的封面和片内标题、可用倍速与对应时长，确定后按所选方式制作，默认交可编辑工程和素材。"

@@ -54,6 +54,8 @@ def prepared_fingerprint(job):
 
 def gates(job, cfg):
     import run
+    import title_review
+    title_review.require(job, cfg)
     identity=production_checks.identity(job)
     job_versions.validate_story_images(job)
     if not production_checks.cut_ready(job,cfg): raise ValueError('切点复核缺失或已过期')
@@ -109,7 +111,7 @@ def prepare(job, cfg):
     body_us=subtitle_review.duration_us(audio)
     import content_selection
     content_selection.validate_job(job)
-    content_selection.duration_ok(body_us/1e6, tolerance=.12)
+    content_selection.duration_ok(body_us/1e6)
     outro_us=round(spec['timing']['outro_seconds']*1e6)
     cover_us=min(round(spec['timing']['cover_seconds']*1e6),body_us)
     images=job_versions.image_assets(job);story=read_json(job/'storyboard.json');copy_text=read_json(job/'copy.json')
@@ -174,7 +176,7 @@ def prepare(job, cfg):
         timeline={'orientation':direction,'draft_name':draft_name,'canvas':canvas,'body_duration_us':body_us,
                   'total_duration_us':body_us,'audio':{'asset_id':'audio','start_us':0,'end_us':body_us,'volume':1.0},
                   'frames':frames,'cover_title_embedded':True,'episode_title':copy_text['episode_title'],
-                  'album_background':{'sha256':background['sha256'],'revision':background['revision'],'reuse_scope':'album'},'frame_fit':'already_canvas_sized; fill_canvas_without_additional_crop',
+                  'album_background':{'sha256':background['sha256'],'revision':background['revision'],'reuse_scope':'episode','mode':background['mode'],'color':background['color']},'frame_fit':'already_canvas_sized; fill_canvas_without_additional_crop',
                   'subtitles':subtitles,'subtitle_style_reference':spec[direction]['texts']['subtitle'],
                   'texts':texts,'presentation_policy':spec['presentation_policy'],'subtitle_display_policy':'hide_first_second_without_shifting_source_timing','transform_convention':spec['transform_convention'],
                   'text_defaults':spec['text_defaults'], 'branding_enabled':spec['branding']['enabled'],
@@ -195,7 +197,7 @@ def prepare(job, cfg):
             safe_layout.transparent_canvas(overlay_source,overlay_path,size,safe_layout.slot(spec,'overlay'),crop_alpha=True)
             overlay=add(direction+'__overlay',overlay_path,'image',source_sha256=file_hash(overlay_source))
             import branding_assets
-            timeline['branding_elements']=[branding_assets.playback_sticker(spec['branding']['elements']['playback'],body_us,start_us=cover_us)]
+            timeline['branding_elements']=[branding_assets.playback_image(spec['branding']['elements']['playback'],body_us,start_us=cover_us)]
             thumb_path=album_visuals.album_cover_path(background)
             timeline['album_cover_available']=thumb_path is not None
             if thumb_path is not None:
@@ -240,7 +242,7 @@ def prepare(job, cfg):
           'timelines':timelines,'review':{'cut':'current','subtitles':'source_grounded_full_review',
           'images': ('automatic_technical_checks_only' if read_json(job/'image_review.json',{}).get('mode')=='automatic_technical'
                      else 'legacy_review_record'),
-          'image_human_review_required':False,'cover_title_visual_inspection':'passed','album_background_visual_inspection':'passed'},'render_submitted':False,'draft_created':False}
+          'image_human_review_required':False,'cover_title_visual_inspection':'passed','frame_check':'algorithmic_solid'},'render_submitted':False,'draft_created':False}
     if source_fingerprint(job,cfg)!=version: raise ValueError('准备期间输入改变，请重新准备')
     atomic_json(job/'handoff_plan.json',plan)
     result={'schema':1,'source_version':version,'plan_sha256':file_hash(job/'handoff_plan.json'),

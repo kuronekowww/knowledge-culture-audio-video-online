@@ -16,7 +16,10 @@ def error_details(exc, phase='generation'):
     elif status and status>=500:kind='service_error'
     elif status:kind='http_error'
     else:kind='invalid_response_or_local_error'
-    return {'category':kind,'phase':phase,'http_status':status,'request_id':getattr(exc,'request_id',None),
+    timeout_source = ('client_read' if isinstance(exc, requests.ReadTimeout) else
+                      'client_connect' if isinstance(exc, requests.ConnectTimeout) else
+                      'upstream_gateway' if status == 504 else None)
+    return {**({'timeout_source':timeout_source} if timeout_source else {}),'category':kind,'phase':phase,'http_status':status,'request_id':getattr(exc,'request_id',None),
             'billing_state':'unknown' if phase=='generation' else 'generation_result_received',
             'next_action':'retry_download' if phase=='download' else 'inspect_receipt_or_query_provider_before_resubmit'}
 
@@ -34,6 +37,11 @@ def import_image(manifest,image_id,source,provider,model,reviewer,evidence):
         with images.Image.open(source) as im:dimensions=list(im.size)
         portrait=image_id in {'cover_portrait','album_background'}
         if (portrait and dimensions[0]>=dimensions[1]) or (not portrait and dimensions[0]<=dimensions[1]):raise ValueError('实际图片方向错误')
+        if image_id=='cover_portrait' and (item.get('cover_fit') or raw.get('cover_policy',{}).get('id')=='central-subject-cover-20261110-r24'):
+            if dimensions!=[1080,1920]:
+                raise ValueError('外部导入封面需要已审核的1080×1920最终画布')
+            item['size']='1080x1920'
+            item.pop('cover_fit',None)
         target=data['output_dir']/item['filename']
         # Save history before changing either provenance or manifest; user approvals will invalidate by fingerprint/hash.
         old=read_json(target.parent/'.receipts'/f'{image_id}.json',{})
@@ -44,7 +52,8 @@ def import_image(manifest,image_id,source,provider,model,reviewer,evidence):
         fingerprint=images.image_fingerprint(raw.get('api_base',images.DEFAULT_API_BASE),item,data['quality'])
         provenance={'provider':provider,'model':model,'mode':'external_import','source_path':str(source),
                     'source_sha256':file_hash(source),'requested_size':item['size'],'actual_size':dimensions,
-                    'prompt':item['prompt'],'prompt_hash':digest(item['prompt']),'reviewer':reviewer,'evidence':evidence}
+                    'prompt':item['prompt'],'prompt_hash':digest(item['prompt']),'reviewer':reviewer,'evidence':evidence,
+                    'quality_requested':item.get('quality',data['quality']),'quality_reported':None}
         if source!=target.resolve():atomic_copy(source,target)
         atomic_json(target.parent/'.receipts'/f'{image_id}.json',
                     {'fingerprint':fingerprint,'sha256':file_hash(target),'provenance':provenance})

@@ -1,6 +1,6 @@
 {
   "schema": "knowledge-layout/v1",
-  "id": "portrait-user-20261107-r18",
+  "id": "portrait-team-20261110-clean-raised-cover-r25",
   "units": "canvas_pixels_top_left_xyxy",
   "canvas": {
     "width": 1080,
@@ -8,9 +8,9 @@
   },
   "cover_safe_rect_px": [
     54,
-    250,
+    240,
     1026,
-    1440
+    1680
   ],
   "body_images": {
     "mode": "raw_image_full_width_centered_on_separate_background",
@@ -20,16 +20,19 @@
   },
   "font_files": {
     "display": {
-      "asset": "assets/fonts/jiangxizhuokai.ttf",
+      "asset": "jiangxizhuokai.ttf",
       "sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
       "postscript": "jiangxizhuokai-Regular",
       "weight": 400,
       "coverage": "assets/fonts/display-coverage.json",
       "coverage_sha256": "645cd56af2467fadd7f423f785e6ca51ad61229f60ec058d75098539bcd796ca",
-      "origin": "User-installed 江西拙楷 Version 1.000"
+      "origin": "User-installed 江西拙楷 Version 1.000",
+      "embedding": "local",
+      "private_local_font": true,
+      "calibrated_advances": "assets/fonts/display-advances.json"
     },
     "subtitle": {
-      "asset": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+      "asset": "PingFangUI.ttc",
       "sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
       "postscript": "PingFangSC-Medium",
       "weight": 500,
@@ -37,7 +40,10 @@
       "coverage_sha256": "0e2f7a81ce0e98a7aaefe13937a3dede479a92564e7b4af0fca585d25d2b083b",
       "origin": "macOS registered PingFang SC Medium; require exact local file hash, no substitution",
       "embedding": "local",
-      "local_name": "PingFangSC-Medium"
+      "local_name": "PingFangSC-Medium",
+      "private_local_font": true,
+      "calibrated_advances": "assets/fonts/subtitle-advances.json",
+      "ttc_face_index": 20
     }
   },
   "texts": {
@@ -57,7 +63,8 @@
       ],
       "max_width_px": 900,
       "nominal_scale_x": 1.0282,
-      "max_lines": 1
+      "max_lines": 1,
+      "jianying_font_size": 13
     },
     "title_line2": {
       "font": "display",
@@ -75,7 +82,8 @@
       ],
       "max_width_px": 900,
       "nominal_scale_x": 1,
-      "max_lines": 1
+      "max_lines": 1,
+      "jianying_font_size": 13
     },
     "album": {
       "font": "display",
@@ -94,7 +102,9 @@
       "left_top_px": [
         357,
         1377.95763
-      ]
+      ],
+      "jianying_font_size": 10,
+      "jianying_max_width_px": 900
     },
     "subtitle": {
       "font": "subtitle",
@@ -119,7 +129,8 @@
       "max_width_px": 936,
       "nominal_scale_x": 1,
       "max_lines": 2,
-      "overflow": "wrap_without_changing_words_or_timing"
+      "overflow": "wrap_without_changing_words_or_timing",
+      "jianying_font_size": 12
     }
   },
   "boxes_px": {
@@ -161,9 +172,8 @@
     "outro": "assets/portrait-outro.mp4"
   },
   "playback": {
-    "sticker_id": "7017820454807276814",
-    "native_canvas_width_px": 1080,
-    "asset": "assets/playback.gif"
+    "mode": "static_png",
+    "asset": "assets/playback-still.png"
   },
   "album_color_policy": {
     "algorithm": "cover-accent-hsv-v1",
@@ -196,7 +206,7 @@
     "title_style": "具体人物、动作或关系＋口语化疑问/真实反差；可用“之前/私下/居然/却”连接故事钩子，内容必须兑现，避免空泛结论、虚构因果和无依据夸张。",
     "title_overflow": "require_rewrite_do_not_reduce_font_size",
     "album_overflow": "wrap_at_semantic_boundary_then_require_album_display_name",
-    "cover_title": "新生成封面完整标题为两行或三行、至少双色突出重点；重用历史封面时明确标注旧版，不声称已按新规范重生。",
+    "cover_title": "已确认的一至两行封面标题在中下部整组居中，保留字号与行间关系，可用一行重点色、花体或艺术字。",
     "title_style_examples": [
       "嫁给刘欢前，卢璐到底有多牛",
       "认识九天就定终身，却被父母逼着写绝交信",
@@ -210,58 +220,67 @@
     "assets/source-label-dark.png": "0299ded7a97d54faaab6ba0bb689478b5731501bc8ee0d2fa494546d2803a669",
     "assets/source-label-light.png": "b1262ae99209ef88888740339d05d94f2f44c8565f5e1df46a227eef1ae572e2",
     "assets/portrait-outro.mp4": "317eb8ed7ba52a78bc446f1067fba5bf439387957d9c161008c0dadc0db6dac8",
-    "assets/playback.gif": "01c29b9b1b0c73dd3151e508a17c494016a43d999ef80b27ea6d48a353e74360",
-    "assets/cover-proportion-reference.png": "e852a7606389e9293b00506d65a88cb51109a94bb8f3db277adbed59f7f773af"
+    "assets/fonts/display-advances.json": "588c8099cd318984502b5ac81b63e54b95126736fe642a56888b37cea9c8cca0",
+    "assets/fonts/subtitle-advances.json": "05d06e52bd4198b4856013d2b3b295d39246f14d86ef698629b53e5d4dce05f2",
+    "assets/playback-still.png": "1b9ef734a2bd6636d3434bff13389a5beb1e11237bb2e6837610d5f9bc5cd4c3",
+    "assets/cover-case-reference.jpg": "11a5b7edd7db7bed277cc16b28737b04aebe06c7f9a910a7d888009f7db22b9d"
   },
   "cover_design": {
-    "policy_id": "two-or-three-line-cover-20261107",
-    "reference_asset": "assets/cover-proportion-reference.png",
-    "reference_scope": "人物比例、构图层级和标题双色强调；不复制参考图上下黑带或超出安全区的文字",
+    "policy_id": "central-subject-raised-title-r25",
+    "reference_asset": "assets/cover-case-reference.jpg",
+    "reference_scope": "借鉴案例中间情境主体与下方大标题的层级，及PSD上的侧边小名与标题压图；按本集内容和专辑视觉设计。",
     "subject": {
-      "role": "album_core_subject",
-      "prominence": "dominant_portrait_or_core_book_event",
+      "role": "episode_grounded_subject",
+      "prominence": "central_person_event_object_concept_or_book",
       "critical_focus_region_px": [
-        90,
-        290,
-        820,
-        1130
+        165,
+        310,
+        915,
+        1150
       ],
-      "body_may_extend_beyond_focus": true
+      "containment": "all_semantically_essential_subjects_actions_and_props_within_centered_3_4_safe_rect",
+      "incidental_clothing_may_bleed": true
     },
     "album_short_name": {
       "source_field": "album_core_label",
       "allowed_placements": [
-        "top",
-        "right"
+        "left",
+        "right",
+        "top"
       ],
-      "default_placement": "right",
+      "default_placement": "auto",
       "regions_px": {
         "top": [
-          90,
-          330,
-          990,
+          64,
+          260,
+          1016,
           500
         ],
         "right": [
-          830,
-          350,
-          1010,
-          1060
+          780,
+          260,
+          1026,
+          1130
+        ],
+        "left": [
+          54,
+          260,
+          300,
+          1130
         ]
       },
       "max_glyph_height_px": 144,
-      "hierarchy": "secondary_to_portrait_and_episode_hook"
+      "hierarchy": "secondary_to_portrait_and_episode_hook",
+      "optional": true
     },
     "episode_title": {
       "source_field": "cover_title_lines",
       "region_y_px": [
-        1070,
-        1430
+        772,
+        1362
       ],
-      "max_width_from": "texts.title_line1.max_width_px",
       "line_colors": [
         "#ff5633",
-        "#fff1b0",
         "#fff1b0"
       ],
       "min_color_distance_rgb": 100,
@@ -269,13 +288,46 @@
       "keep_face_clear": true,
       "alignment": "center",
       "priority": "complete_story_hook",
-      "overflow": "choose_two_or_three_semantic_lines_then_rewrite_complete_title_if_needed",
+      "overflow": "rephrase_and_reconfirm_before_generation",
       "allowed_line_counts": [
-        2,
-        3
+        1,
+        2
       ],
-      "line_count_selection": "按完整语义断句与可读性选择两行或三行，不强行挤成两行"
+      "line_count_selection": "按完整语义和易读性选择一行或两行",
+      "accent": "optional_one_line",
+      "artistic_lettering": "allowed_if_legible",
+      "width_from": "cover_safe_rect_px",
+      "group_center_y_px": 1203,
+      "group_center_tolerance_px": 48
     },
-    "review": "visual_inspection_with_recorded_bounds_colors_line_count_not_fake_ocr"
+    "review": "record_identifying_subjects_and_essential_actions_props_inside_3_4_allow_incidental_edges_to_bleed"
+  },
+  "cover_center_crop_rect_px": [
+    0,
+    240,
+    1080,
+    1680
+  ],
+  "body_frame": {
+    "mode": "episode_solid",
+    "algorithm": "contrast-sampled-v1",
+    "sample_shots": 7,
+    "palette": [
+      "#101820",
+      "#202d42",
+      "#173638",
+      "#3b2733",
+      "#3c3028",
+      "#4c5864",
+      "#526052",
+      "#605151",
+      "#575569"
+    ],
+    "foreground_colors": [
+      "#ffffff",
+      "#ffde00"
+    ],
+    "min_text_contrast": 4.5,
+    "web_stage_color": "#e3e9ed"
   }
 }

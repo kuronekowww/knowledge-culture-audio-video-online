@@ -27,9 +27,11 @@ function inputs() {
   const profilePath=new URL('../layout-profile.json',import.meta.url);
   if(manifest.layout_profile?.sha256!==fileHash(profilePath))
     throw new Error('工程的布局配置已过期；按当前唯一配置新建工程，不覆盖手工编辑版本');
-  for(const f of Object.values(manifest.fonts??{}))if(f.embedding==='local'){
-    if(!existsSync(f.asset)||fileHash(f.asset)!==f.sha256)
-      throw new Error('本机字幕字体缺失或版本变化，禁止静默回退：'+f.postscript);
+  const bound=JSON.parse(process.env.KNOWLEDGE_RESOLVED_FONT_PATHS || '{}');
+  for(const [role,f] of Object.entries(manifest.fonts??{}))if(f.embedding==='local'){
+    const file=bound[role] || f.asset;
+    if(!existsSync(file)||fileHash(file)!==f.sha256)
+      throw new Error('本机字体缺失或版本变化：'+f.postscript);
   }
   const result={};
   const ignore=new Set(['knowledge-project.json','inspection.json','render-result.json','sample-result.json','export-verification.json']);

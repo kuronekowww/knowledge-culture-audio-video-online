@@ -1,6 +1,6 @@
 # 百炼接口与知识文化模式
 
-本技能使用百炼paraformer-v2识别最终剪辑原声音频，默认热词关闭。字幕一律full核对，按[字幕契约](subtitle-review.md)处理术语、人名、数字、年代和引文；不能沿用原小说版keywords_only。ASR任务提交、轮询、下载与来源凭据由脚本负责，超时保留原任务，不重发未知收费请求。
+需要语音识别时，默认使用百炼 paraformer-v2，热词默认关闭。短句文稿可通过抽样校准复用，补对齐与整轨回退条件见[字幕来源](subtitle-review.md)。字幕一律full核对，按[字幕契约](subtitle-review.md)处理术语、人名、数字、年代和引文；不能沿用原小说版keywords_only。ASR任务提交、轮询、下载与来源凭据由脚本负责，超时保留原任务，不重发未知收费请求。
 
 凭据从DASHSCOPE_API_KEY环境变量或技能根目录.env读取，已有环境变量优先；只报告是否存在，不输出明文。configure_bailian.py用于迁移任务识别设置，不写密钥或环境文件；密钥不放进交接或发布包。asr.backend=bailian_paraformer；默认model=paraformer-v2，hotwords默认关闭，开启前由bailian_hotwords校验并确认实际支持。
 

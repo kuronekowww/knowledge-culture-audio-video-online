@@ -36,8 +36,8 @@ schema=knowledge-culture-handoff/v1，consumer_skill=jianchuang-jianying-assista
 
 正文frames直接引用原始横图，含box_px与原图尺寸；album_background独立资产和轨道，延续至片尾结束。切换后端不重生底图或正文图。
 
-branding_elements含一个原生playback贴纸与可选真实小封面、来源透明图；位置与缩放从唯一配置生成。无真实封面只略过小封面，不能套用其他专辑封面。
+branding_elements含一张静态唱片PNG与可选真实小封面、来源透明图；位置与缩放从唯一配置生成。无真实封面只略过小封面，不能套用其他专辑封面。
 
-首秒严格只显示封面和品牌PNG；小专辑封面与贴纸也从1秒开始，贴纸一次覆盖到原音频末，不拆循环。presentation_policy记录这组要求；旧交接在恢复时需重新prepare/publish，复用既有音频、字幕来源、图片和共用底图，不重新生图。旧copy.cta/notice不会显示。
+首秒严格只显示封面和品牌PNG；小专辑封面与静态唱片从1秒显示到正文音频末。presentation_policy记录这组要求；旧交接在恢复时需重新prepare/publish，复用既有音频、字幕来源、正文图片，不重新生图。旧copy.cta/notice不会显示。
 
 本地版不走公开上传：upload_request作为本机素材清单，内置临时loopback媒体路由向本机服务提供文件。assembly_handoff.json记录本次实际请求，draft_result.json记录模式、保存ID、安装目录及核验报告；完整流程见[draft-assembly.md](draft-assembly.md)。

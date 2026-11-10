@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import contextlib
+import contextvars
 import hashlib
 import json
 import os
@@ -16,12 +17,43 @@ def digest(value) -> str:
                                     separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
+_hashes = contextvars.ContextVar('knowledge_file_hashes', default=None)
+
+
+@contextlib.contextmanager
+def hash_session():
+    """Reuse byte reads only inside the current run. Never persist stat-based approvals."""
+    if _hashes.get() is not None:
+        yield
+        return
+    token = _hashes.set({})
+    try:
+        yield
+    finally:
+        _hashes.reset(token)
+
+
+def _file_version(info):
+    return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+
 def file_hash(path: Path) -> str:
+    path = Path(path)
+    cache = _hashes.get()
+    if cache is not None:
+        version = _file_version(path.stat())
+        key = os.path.abspath(path)
+        saved = cache.get(key)
+        if saved and saved[0] == version:
+            return saved[1]
     h = hashlib.sha256()
-    with Path(path).open('rb') as f:
+    with path.open('rb') as f:
         for block in iter(lambda: f.read(1024 * 1024), b''):
             h.update(block)
-    return h.hexdigest()
+        result = h.hexdigest()
+        if cache is not None and _file_version(os.fstat(f.fileno())) == version:
+            cache[key] = (version, result)
+    return result
 
 
 def read_json(path: Path, default=None):

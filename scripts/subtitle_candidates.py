@@ -14,6 +14,10 @@ def normalized(text):
 
 def document_map(units, context):
     blocks = [b for r in context.get('document_ranges', []) for b in r['blocks']]
+    if context.get('supplied_document') and context.get('supplied_transcript'):
+        # The explicit manuscript is the textual comparison source. Its punctuation
+        # can propose a boundary, but timing still comes exclusively from ASR units.
+        blocks=[{'id':'user-document','text':context['supplied_transcript']}]
     if not blocks and context.get('transcript'):
         blocks = [{'id': 'plain', 'text': context['transcript']}]
     doc, owners, ends = '', [], set()

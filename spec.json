@@ -1,5 +1,5 @@
 {
-  "version": 15,
+  "version": 17,
   "description": "泛价值原声竖版视频；Hyperframes图像开场＋知识模板＋按需插图，或纯图片故事路线；统一品牌布局。",
   "transform_convention": {
     "note": "服务按 raw_x/W、raw_y/H 写入剪映；剪映归一化值作用于半画布。左上角像素中心(cx,cy)换算 raw_x=2*cx-W、raw_y=H-2*cy。spec x/y为API原始参数，不可再除一次。",
@@ -31,11 +31,11 @@
   "visual_layout": {
     "cover_id": "cover_portrait",
     "cover_text": "derived_from_layout_profile.cover_design",
-    "background_scope": "album",
+    "background_scope": "one_solid_per_episode",
     "body_scene_orientation": "landscape",
     "image_quality": "low",
-    "background_texture": "edge patterns gently extend inward; central half remains calm",
-    "missing_album_cover": "confirmed_style_only; omit album thumbnail, preserve brand text and playback sticker"
+    "background_texture": "uniform solid contrast-selected surround",
+    "missing_album_cover": "omit album thumbnail, preserve brand text and stationary record"
   },
   "presentation_policy": {
     "suppressed_text_roles": [
@@ -52,7 +52,7 @@
       100
     ],
     "cover_count": 1,
-    "album_background_scope": "once per album, excluded from per-track image count",
+    "album_background_scope": "episode solid color generated locally; no image service",
     "scope": "images_mode_only"
   },
   "draft_naming": {
@@ -89,7 +89,24 @@
       "E01",
       "E02"
     ],
-    "background_policy": "same_hue_deep_outer_light_animation",
+    "background_policy": "solid_outer_contrast_with_middle_stage",
     "subtitle_backplate": "none"
+  },
+  "selection_policy": {
+    "modes": [
+      "excerpt",
+      "full_track"
+    ],
+    "default": "excerpt",
+    "short_full_track_exception": false,
+    "full_track_may_omit_hook_with_reason": true
+  },
+  "delivery_policy": {
+    "default_target": "project",
+    "include_editable_project": true,
+    "explicit_alternatives": [
+      "mp4",
+      "preview"
+    ]
   }
 }

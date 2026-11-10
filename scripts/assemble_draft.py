@@ -16,7 +16,7 @@ import assembly_runtime as runtime
 import draft_verify
 import draft_naming
 import handoff
-from artifacts import atomic_json, read_json, digest, file_hash, file_lock
+from artifacts import atomic_json, read_json, digest, file_hash, file_lock, hash_session
 from portable_prepare import prepare
 from portable_validate import validate
 
@@ -105,6 +105,7 @@ def current(job):
     except (OSError,KeyError,ValueError,TypeError):return None
 
 
+@hash_session()
 def assemble(job,cfg,mode=None,new_build=False,no_install=False):
     settings=runtime.backend(cfg,mode);selected=settings['mode']
     if selected=='local':
@@ -147,7 +148,6 @@ def assemble(job,cfg,mode=None,new_build=False,no_install=False):
         source=download(client,entry,identifier)
         import jianying_profile
         jianying_profile.finalize(source,line,assets)
-        checked_report(job,payload,source)
         result['server_name_matches']=read_json(source/'draft_meta_info.json',{}).get('draft_name')==line['draft_name']
         target_root=None if no_install else install_root(cfg,selected)
         target_root=target_root or entry/'portable'
@@ -157,8 +157,6 @@ def assemble(job,cfg,mode=None,new_build=False,no_install=False):
             name=draft_naming.directory_name(line['draft_name'])
             if (target_root/name).exists():name=draft_naming.directory_name(line['draft_name'])+'_'+identifier
             portable=prepare(source,target_root,name);atomic_json(entry/'portable.json',portable);target=Path(portable['target_dir'])
-        if not validate(target)['ok']:raise ValueError('便携草稿媒体校验失败')
-        jianying_profile.finalize(target,line,assets)
         meta=draft_naming.apply_metadata(target,line['draft_name'])
         report=checked_report(job,payload,target)
         report.update(draft_name=line['draft_name'],draft_meta_path=str(meta),draft_meta_sha256=file_hash(meta))

@@ -16,22 +16,23 @@ def path_at(job, value):
 
 def preflight(jobs):
     checks=[]
-    def check(name, call):
+    def check(name, call, job=None):
         try: checks.append({'name':name,'ok':True,'detail':call()})
         except Exception as exc: checks.append({'name':name,'ok':False,'error':str(exc)})
-    def runtime():
-        result=subprocess.run([config.PY,'-c','import requests,PIL,sys;print(sys.version)'],capture_output=True,text=True,timeout=30)
-        if result.returncode: raise ValueError('运行环境缺少 requests/Pillow 或解释器不可用')
-        return result.stdout.strip()
+        if job is not None:
+            checks[-1]['job'] = str(job)
+    from runtime_doctor import inspect as inspect_runtime, default_record
+    first_config = read_json(jobs[0]/'config.json',{}) if jobs else {}
+    # Share machine probes across batches. Use the exact interpreter powering this batch.
+    report = inspect_runtime(default_record(first_config).with_name('runtime-production.json'), python=config.PY)
+    checks.append({'name':'runtime','ok':bool(report['python']),'detail':report['python'] or report['attempts']})
+    for name in ('ffmpeg','ffprobe','fonts'):
+        value = report['checks'].get(name)
+        checks.append({'name':name,'ok':bool(value),'detail':value or report['errors']})
     def writable(path):
         path.mkdir(parents=True,exist_ok=True)
         with tempfile.TemporaryFile(dir=path) as f: f.write(b'preflight')
         return str(path)
-    def binary(name):
-        if not shutil.which(name): raise ValueError('缺少 '+name)
-        return shutil.which(name)
-    check('runtime',runtime)
-    for name in ('ffmpeg','ffprobe'): check(name,lambda n=name:binary(n))
     spec=config.load_spec()
     if any(read_json(job/'config.json',{}).get('creative_options',{}).get('branding_enabled',True) is True for job in jobs):
         for kind in ('overlay','outro'):
@@ -39,13 +40,21 @@ def preflight(jobs):
                 check(f'brand/{kind}/{direction}',lambda p=config.SKILL_DIR/raw:file_hash(p))
     if any(read_json(job/'config.json',{}).get('creative_options',{}).get('branding_enabled',True) is True for job in jobs):
         import branding_assets
-        check('brand/playback_sticker',lambda:branding_assets.playback_sticker(spec['branding']['elements']['playback'],2_000_000))
+        check('brand/playback_image',lambda:branding_assets.playback_image(spec['branding']['elements']['playback'],2_000_000))
     import shared_album, xql_catalog, bailian_asr, bailian_hotwords
     for job in jobs:
         cfg=read_json(job/'config.json',{})
-        check('write/'+job.name,lambda j=job:writable(j))
-        check('cache/'+job.name,lambda c=cfg:writable(shared_album.album_root(c)))
+        check('write/'+job.name,lambda j=job:writable(j),job)
+        check('cache/'+job.name,lambda c=cfg:writable(shared_album.album_root(c)),job)
         def catalog(c=cfg,j=job):
+            plan=read_json(j/'cut_plan.json',{})
+            if plan.get('source_audio') and (c.get('user_transcript_path') or c.get('ai_doc_path')):
+                import document_context, production_checks
+                if c.get('user_transcript_path'):
+                    document_context.supplied_reference(j,c)
+                if c.get('ai_doc_path'):
+                    document_context.caption_document(j,c,fetch=False)
+                return {'source':'explicit_local_track','track_id':plan.get('track_id'),'audio':str(production_checks.source_audio(j))}
             if c.get('master_catalog'):
                 import master_catalog
                 row=master_catalog.selected_row(j,c)
@@ -53,12 +62,27 @@ def preflight(jobs):
             if c.get('csv'): return {'rows':len(shared_album.input_rows(j,c))}
             if (j/xql_catalog.SNAPSHOT).is_file(): return {'rows':len(xql_catalog.read_snapshot(j/xql_catalog.SNAPSHOT,c['album_id']))}
             xql_catalog.signature();return '签名存在；未发起查询'
-        check('catalog/'+job.name,catalog)
-        def asr(c=cfg):
+        check('catalog/'+job.name,catalog,job)
+        def asr(c=cfg,j=job):
+            import caption_routing
+            if caption_routing.mode(c)=='auto':
+                return '按文稿/音轨缓存和局部声学校验分流；使用识别服务时检查对应配置'
             if c.get('asr',{}).get('backend','bailian_paraformer')!='bailian_paraformer':
-                raise ValueError('线上入口使用百炼；旧本地任务请先显式迁移')
+                import asr_backend
+                return asr_backend.identity(c)
+            if not (j/'cut_plan.json').is_file():return '尚在入口核对，暂不需要识别凭据'
+            if (j/'final_transcript.meta.json').is_file():
+                import subtitle_review
+                try:
+                    subtitle_review.current_basis(j,c)
+                    return '当前识别结果已绑定真实音频；无需重新提交'
+                except (OSError,ValueError,KeyError,TypeError):pass
+            if (j/'cut_result.json').is_file():
+                import timed_audio_alignment, subtitle_review
+                if subtitle_review.audio_path(j).is_file() and timed_audio_alignment.cached_full(j,c,require_current=True):
+                    return '与最终音轨绑定的识别缓存存在'
             bailian_asr.key();return '密钥存在；未调用识别'
-        check('asr/'+job.name,asr)
+        check('asr/'+job.name,asr,job)
     return {'ok':bool(jobs) and all(x['ok'] for x in checks),'checks':checks,
             'note':'此处仅预检素材生产；组装另查本机项目/服务或线上服务。未验证网络、额度或MOSN访问权限；本地组装不要求上传。'}
 

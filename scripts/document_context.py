@@ -1,4 +1,4 @@
-"""Coarse AI-document context; never a source of subtitle timestamps."""
+"""Read selected AI documents and preserve their native segment timing for acoustic verification."""
 from __future__ import annotations
 
 import math
@@ -81,12 +81,73 @@ def record(track_id, origin, doc):
             'content_hash': digest(doc['text']), 'blocks_hash': digest(doc['blocks']), 'fetched_at': time.time()}
 
 
-def ensure_selected(job, cfg):
+def local_document(source, track):
+    source = Path(source)
+    data = read_json(source)
+    if data is None:
+        raise ValueError('指定的带时码 AI 文稿不存在：'+str(source))
+
+    def check_track(row):
+        if isinstance(row, dict):
+            for key in ('track_id','trackId'):
+                if key in row and str(row[key]) != str(track):
+                    raise ValueError('AI 文稿所标的声音 ID 与本条任务不符：'+str(source))
+
+    check_track(data)
+    payload = data.get('raw_response', data) if isinstance(data, dict) else data
+    check_track(payload)
+    rows = payload.get('body') if isinstance(payload, dict) else payload
+    if not isinstance(rows, list) or not rows:
+        raise ValueError('ai_doc_path 需要本条声音的原始 body 分段数组；普通文稿请用 user_transcript_path')
+    for row in rows:
+        check_track(row)
+    doc = normalize_document(payload)
+    if not doc['text']:
+        raise ValueError('本地 AI 文稿未包含可用正文：'+str(source))
+    return {**doc, 'track_id':str(track), 'origin':'local_ai_doc',
+            'content_hash':digest(doc['text']), 'blocks_hash':digest(doc['blocks'])}
+
+
+def caption_document(job, cfg, *, fetch=True):
+    """Read the full selected-track timeline before correcting an offset or intersecting clips."""
+    import shared_album
+    track = str(read_json(job/'cut_plan.json', {}).get('track_id',''))
+    if not track.isdigit():
+        return None
+    if cfg.get('ai_doc_path'):
+        return local_document(job/Path(cfg['ai_doc_path']).expanduser(), track)
+    primary = shared_album.album_root(cfg)/'transcripts'/(track+'.json')
+    def cached():
+        for path in (primary, primary.parent/'timed'/primary.name):
+            saved = read_json(path, {})
+            if not saved or saved.get('origin')=='csv':
+                continue
+            if saved.get('track_id') is not None and str(saved['track_id']) != track:
+                raise ValueError('缓存的 AI 文稿与任务声音 ID 不一致：'+track)
+            if saved.get('normalizer_version') != NORMALIZER_VERSION and saved.get('raw_response') is not None:
+                doc = normalize_document(saved['raw_response'])
+                saved = {**saved, **doc, 'blocks_hash':digest(doc['blocks']), 'content_hash':digest(doc['text'])}
+            if saved.get('blocks'):
+                if digest(saved['blocks'])!=saved.get('blocks_hash') or digest(saved.get('text',''))!=saved.get('content_hash'):
+                    raise ValueError('带时码文稿缓存校验失败：'+track)
+                return saved
+        return None
+    saved = cached()
+    if saved is None and fetch:
+        ensure_selected(job, cfg, for_captions=True)
+        saved = cached()
+    return saved
+
+
+def ensure_selected(job, cfg, *, for_captions=False):
     """Upgrade only the selected legacy remote transcript; CSV text stays authoritative."""
     import config
     import mosn_album_track as mosn
     import shared_album
     import timing
+    if cfg.get('user_transcript_path'):
+        supplied_reference(job, cfg)  # Verify the actual supplied document before any remote fetch.
+        if not cfg.get('ai_doc_path') and not for_captions: return
     plan = read_json(job / 'cut_plan.json', {})
     track = str(plan.get('track_id', ''))
     if not track.isdigit():
@@ -100,14 +161,13 @@ def ensure_selected(job, cfg):
             source = Path(local).expanduser()
             if not source.is_absolute():
                 source = job / source
-            if not normalize_document(read_json(source))['text']:
-                raise ValueError('本地AI文稿为空')
+            local_document(source, track)
             return
         if saved.get('raw_response') is not None and saved.get('normalizer_version') != NORMALIZER_VERSION:
             raw_path = archive_response(path, saved['raw_response'])
             saved = {**record(track, saved.get('origin'), normalize_document(saved['raw_response'])), 'raw_path': raw_path}
             atomic_json(path, saved)
-        if saved.get('origin') == 'csv':
+        if saved.get('origin') == 'csv' or (cfg.get('user_transcript_path') and not saved.get('blocks')):
             # Preserve supplied text; fetch timing reference in a separate cache.
             path = path.parent/'timed'/path.name
             saved = read_json(path,{})
@@ -135,6 +195,21 @@ def ensure_selected(job, cfg):
                 measured['status'] = 'error'
                 status = fetched['status'] if fetched['status'] != 'ok' else 'normalization_failed'
             atomic_json(attempt_path, {'key': attempt_key, 'at': time.time(), 'status': status})
+
+
+def supplied_reference(job, cfg):
+    """A plain user transcript is semantic context, never fabricated word timing."""
+    from artifacts import file_hash
+    raw = cfg.get('user_transcript_path')
+    if not raw: return {}
+    path = Path(raw).expanduser()
+    if not path.is_absolute(): path = Path(job)/path
+    if path.suffix.lower() not in ('.txt', '.md'):
+        raise ValueError('user_transcript_path支持UTF-8 TXT/Markdown；带时码JSON用ai_doc_path')
+    text = path.read_text(encoding='utf-8-sig').strip()
+    if not text: raise ValueError('用户文稿为空，不能静默忽略')
+    return {'supplied_transcript':text, 'supplied_document':{'path':str(path.resolve()), 'sha256':file_hash(path),
+            'role':'semantic_reference_only', 'not_instructions':True}}
 
 
 def select(record_value, plan, cut_result):

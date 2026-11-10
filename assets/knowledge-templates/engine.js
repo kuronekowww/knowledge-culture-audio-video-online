@@ -35,18 +35,31 @@
  function box(id,b){Object.assign($(id).style,{left:b[0]+'px',top:b[1]+'px',width:b[2]-b[0]+'px',height:b[3]-b[1]+'px'})}
  async function setExample(example,albumOverride){
   current=typeof example==='string'?KIT.examples.find(x=>x.id===example):structuredClone(example);if(!current)throw Error('Example missing');
-  const a=KIT.albums[albumOverride||current.album_id];theme=window.KnowledgePalette(current.theme_override?.accent||a.theme.accent);for(const [k,v] of Object.entries(theme))document.documentElement.style.setProperty('--'+k.replaceAll('_','-'),v);document.documentElement.style.setProperty('--tint',theme.accent+'22');
+  const a=KIT.albums[albumOverride||current.album_id];theme=window.KnowledgePalette(current.theme_override?.accent||a.theme.accent,a.theme.background);for(const [k,v] of Object.entries(theme))document.documentElement.style.setProperty('--'+k.replaceAll('_','-'),v);document.documentElement.style.setProperty('--tint',theme.accent+'22');
   duration=current.demo_duration||8;timeline=current.stage_times||[0,.8,2,3.4,4.8];
   for(const role of ['title_line1','title_line2','subtitle']){const row=current.styles[role];canonical(role,row.text,row.style)}
   canonical('album',a.display,a.style);$('album-cover').src=a.cover;box('album-cover',KIT.layout.boxes_px.album_cover);box('source-label',KIT.layout.boxes_px.source_label);
-  const ps=KIT.playback,b=KIT.layout.boxes_px.playback;Object.assign($('playback').style,{left:b[0]+'px',top:b[1]+'px',width:ps.width+'px',height:ps.height+'px',backgroundSize:`${ps.width*ps.columns}px ${ps.height*ps.rows}px`,transform:`scale(${(b[2]-b[0])/ps.width})`});
+  box('playback',KIT.layout.boxes_px.playback);
   $('module-label').textContent=names[current.type];$('module-heading').textContent=current.heading;$('module-body').innerHTML=renderBody(current);$('module-note').textContent=current.data.note||'';$('animation').classList.toggle('has-note',!!current.data.note);
-  await Promise.all([document.fonts.load('400 78px StoryTitle'),document.fonts.load('500 54px StorySubtitle'),document.fonts.load('700 43px Body'),document.fonts.load('400 30px Body')]);await document.fonts.ready;
+  const fonts=[['StoryTitle',KIT.layout.font_files.display],['StorySubtitle',KIT.layout.font_files.subtitle],['Body',KIT.layout.font_files.subtitle]];
+  for(const [family, locked] of fonts){
+    try {
+      const faces=await document.fonts.load(locked.weight+' 54px '+family,'知识');
+      if(!faces.length||faces.some(face=>face.status!=='loaded'))throw Error('font unavailable');
+    } catch {
+      const status=document.createElement('p');
+      status.setAttribute('role','alert');
+      status.style.cssText='position:fixed;inset:0;z-index:100;background:white;color:black;padding:60px;font:36px sans-serif';
+      status.textContent='请先在本机安装已核对版本的 '+locked.postscript+'，重启浏览器后刷新模板。';
+      document.body.replaceChildren(status);
+      throw Error(status.textContent);
+    }
+  }
+  await document.fonts.ready;
   await Promise.all([...document.images].map(im=>im.decode()));window.film.duration=duration;window.DURATION=duration;frame(duration-.1);return current;
  }
  function frame(t){const p=x=>Math.min(1,Math.max(0,x));for(const e of document.querySelectorAll('[data-step]')){const n=+e.dataset.step,q=n===0?1:1-Math.pow(1-p((t-(timeline[n]??0))/.45),3);e.style.opacity=q;e.style.translate=`0 ${(1-q)*18}px`;}
   for(const e of document.querySelectorAll('[data-path]')){const l=e.getTotalLength(),n=+e.dataset.path,q=p((t-(timeline[n]??0))/1.3);e.style.strokeDasharray=l;e.style.strokeDashoffset=l*(1-q)}
-  const s=KIT.playback,d=s.durations_ms,total=d.reduce((a,b)=>a+b,0);let ms=((t*1000)%total+total)%total,i=0;while(i<d.length-1&&ms>=d[i])ms-=d[i++];$('playback').style.backgroundPosition=`${-(i%s.columns)*s.width}px ${-Math.floor(i/s.columns)*s.height}px`;
  }
  window.setExample=setExample;window.seek=frame;window.setGuides=on=>$('guides').style.display=on?'block':'none';window.film={frame,duration:8,width:1080,height:1920};
  const q=new URLSearchParams(location.search);window.READY=setExample(q.get('id')||'K01',q.get('album')||undefined);window.film.ready=window.READY;

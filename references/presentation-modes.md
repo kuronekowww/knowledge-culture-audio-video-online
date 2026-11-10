@@ -33,6 +33,6 @@
 
 网页动画读 [web-animation.md](web-animation.md)，纯图片读原 [workflow.md](workflow.md)。约7秒一图、十分钟80–100张仅属于纯图片路线，不用于网页动画与插图预算。
 
-呈现方式和输出格式分别记录。`output_backend=capcut|openfilm` 仍是原纯图片组装器的后端；不要把 `hyperframes` 填进这个字段。网页模式创建实际 Hyperframes 源工程与预览；明确需要MP4才导出。若还需剪映或OpenFilm草稿，按网页路线说明处理已经渲染的片段或原生网页层，不能直接调用仅支持图片交接的旧组装器冒充已接入。
+呈现方式和输出格式分别记录。`output_backend=capcut|openfilm` 仍是原纯图片组装器的后端；不要把 `hyperframes` 填进这个字段。做视频默认只交核验过的剪映草稿与素材；明确选择网页/OpenFilm时交对应可编辑工程，网页附已验证预览链接与启动入口。delivery.target默认project；仅明确要求MP4或仅预览时填写对应target和choice_evidence。若还需剪映或OpenFilm草稿，按网页路线说明处理已经渲染的片段或原生网页层，不能直接调用仅支持图片交接的旧组装器冒充已接入。
 
 旧任务没有 presentation 字段时，脚本保留原纯图片行为，避免破坏恢复；新任务仍须由执行者完成入口选择。切换模式复用音频、字幕和已有图片，在新工程目录制作，不覆盖原草稿。

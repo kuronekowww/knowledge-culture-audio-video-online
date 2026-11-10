@@ -6,14 +6,12 @@ import time
 import json
 import uuid
 from artifacts import atomic_json, file_lock, read_json
-import config
 import generate_images
 import resident_asr
-import timing
 import production_io
 
 
-def run_batch(manifest, workers=2, image_workers=3, download_workers=3):
+def run_batch(manifest, workers=2, image_workers=3, download_workers=3, *, selected_jobs=None):
     import run as runner
     manifest = Path(manifest).expanduser().resolve()
     raw = read_json(manifest, {})
@@ -28,14 +26,28 @@ def run_batch(manifest, workers=2, image_workers=3, download_workers=3):
         path = (manifest.parent/path).resolve() if not path.is_absolute() else path.resolve()
         if path in jobs or not (path/'config.json').is_file(): raise ValueError(f'任务重复或缺少config.json: {path}')
         jobs.append(path)
-    preflight = production_io.preflight(jobs)
-    atomic_json(manifest.with_suffix('.preflight.json'),preflight)
-    if not preflight['ok']:
-        result={'status':'failed','phase':'preflight','preflight':preflight,'jobs':{}}
-        atomic_json(manifest.with_suffix('.report.json'),result)
-        return result
+    manifest_total = len(jobs)
+    if selected_jobs is not None:
+        selected = {Path(job).resolve() for job in selected_jobs}
+        if not selected or selected.difference(jobs):
+            raise ValueError('定点续跑的任务必须出现在当前批次')
+        jobs = [job for job in jobs if job in selected]
     report_path = manifest.with_suffix('.report.json')
     with file_lock(manifest.with_suffix('.lock'), timeout=2):
+        preflight = production_io.preflight(jobs)
+        atomic_json(manifest.with_suffix('.preflight.json'),preflight)
+        blocked = {}
+        if not preflight['ok']:
+            for job in jobs:
+                issues = [c for c in preflight['checks'] if not c['ok'] and c.get('job') in (None, str(job))]
+                if issues:
+                    message = '；'.join(f"{c['name']}: {c.get('error') or c.get('detail')}" for c in issues)
+                    blocked[str(job)] = {'status':'failed', 'phase':'preflight', 'error':message}
+            if len(blocked) == len(jobs):
+                result={'status':'failed','phase':'preflight','preflight':preflight,'jobs':blocked,
+                        'selected':len(jobs),'manifest_total':manifest_total}
+                atomic_json(report_path,result)
+                return result
         pool = resident_asr.Pool(); previous = resident_asr.ACTIVE; old_gate = generate_images.BATCH_GATE
         if previous is not None: raise ValueError('不支持在同一进程嵌套批次')
         old_downloads = generate_images.BATCH_DOWNLOADS
@@ -43,7 +55,8 @@ def run_batch(manifest, workers=2, image_workers=3, download_workers=3):
         generate_images.BATCH_DOWNLOADS = downloads
         resident_asr.ACTIVE = pool; generate_images.BATCH_GATE = threading.BoundedSemaphore(image_workers)
         start = time.perf_counter()
-        result = {'schema': 1, 'run_id': uuid.uuid4().hex, 'started_at': time.time(), 'status': 'running', 'jobs': {}, 'workers': workers, 'image_workers': image_workers, 'download_workers': download_workers}
+        result = {'schema': 1, 'run_id': uuid.uuid4().hex, 'started_at': time.time(), 'status': 'running', 'jobs': blocked, 'workers': workers, 'image_workers': image_workers, 'download_workers': download_workers,
+                  'selected':len(jobs),'manifest_total':manifest_total}
         def work(job):
             began = time.perf_counter()
             try:
@@ -52,13 +65,13 @@ def run_batch(manifest, workers=2, image_workers=3, download_workers=3):
                 status = ('failed' if code or 'failed' in state.values() else 'awaiting_review' if 'awaiting_human' in state.values()
                           else 'complete' if all(state.get(s) == 'done' for s in runner.state_mod.STAGES) else 'pending')
                 return {'status': status, 'exit_code': code, 'seconds': time.perf_counter()-began,
-                        'stages': state, 'timing': timing.report(job)}
+                        'stages': state, 'timing': read_json(job/'timing_report.json', {})}
             except Exception as exc:
                 return {'status': 'failed', 'error_type': type(exc).__name__, 'error': str(exc), 'seconds': time.perf_counter()-began}
         try:
             atomic_json(report_path, result)
             with ThreadPoolExecutor(max_workers=workers) as executor:
-                futures = {executor.submit(work, job): job for job in jobs}
+                futures = {executor.submit(work, job): job for job in jobs if str(job) not in blocked}
                 for future in as_completed(futures):
                     result['jobs'][str(futures[future])] = future.result()
                     atomic_json(report_path, result)

@@ -117,10 +117,10 @@ def document_route(job, cfg):
         if record.get('origin')=='csv':
             record=read_json(shared_album.album_root(cfg)/'transcripts/timed'/f"{plan.get('track_id','')}.json",{})
         if cfg.get('ai_doc_path'):
-            record = document_context.normalize_document(read_json(path_at(job,cfg['ai_doc_path'])))
+            record = document_context.local_document(path_at(job,cfg['ai_doc_path']),plan.get('track_id',''))
         route = 'locate_from_document' if record.get('blocks') else 'localize_before_full_track'
     result = {'schema':1,'route':route,'context':context,'selected_gaps_ms':gaps,
-              'full_track_asr_allowed':False,'note':'粗时轴用于定位；缺口/无效段须核对局部窗口；最终字幕始终识别最终剪辑音频'}
+              'full_track_asr_allowed':False,'note':'粗时轴用于定位；缺口/无效段须核对局部窗口；进入字幕阶段后在最终音轨上核对时码和文稿版本'}
     atomic_json(job/'document_route.json',result)
     return result
 
@@ -137,7 +137,11 @@ def cut_request(job, cfg):
         if start<0 or end<=start or end>duration+.001: raise ValueError('切点超出源音频')
         ranges.append({'clip_index':i,'start':start,'end':end,'context_start':max(0,start-3),
                        'context_end':min(duration,end+3)})
-    basis={'audio_sha256':file_hash(audio),'plan_hash':digest(plan),'context_hash':digest(route['context']),
+    # Only the original range is heard here. A new playback choice uses this same boundary decision.
+    boundary_plan = {k:v for k,v in plan.items() if k!='speed'}
+    if 'clips' in boundary_plan:
+        boundary_plan['clips'] = [{k:v for k,v in clip.items() if k!='speed'} for clip in clips]
+    basis={'audio_sha256':file_hash(audio),'plan_hash':digest(boundary_plan),'context_hash':digest(route['context']),
            'timing':config.load_spec()['timing'],'identity':identity(job)}
     result={'basis':basis,'source_audio':str(audio),'ranges':ranges,'route':route['route'],
             'selected_gaps_ms':route['selected_gaps_ms'],'request_hash':digest(basis)}
@@ -147,6 +151,23 @@ def cut_request(job, cfg):
 
 def cut_ready(job,cfg):
     try:
+        plan = read_json(job/'cut_plan.json', {})
+        if plan.get('selection_mode') == 'full_track':
+            import content_selection
+            entry = read_json(job/'entry_preflight.json', {})
+            tracks = entry.get('tracks', [])
+            if entry.get('ok') is True and len(tracks) == 1:
+                row = tracks[0]
+                if (row.get('ok') is True and row.get('selection_mode') == 'full_track'
+                        and row.get('track_id') == str(plan.get('track_id'))
+                        and row.get('content_review') == {k:plan.get('content', {}).get(k)
+                            for k in ('is_complete','is_intro_only','complete_reason')}
+                        and row.get('source_sha256') == file_hash(source_audio(job))):
+                    # This exact source and complete range were already reviewed at entry.
+                    # Playback tempo changes neither boundary of the selected original.
+                    content_selection.validate(plan,cfg)
+                    content_selection.validate_source(plan, row['actual_seconds'])
+                    return True
         request=cut_request(job,cfg); response=read_json(job/'cut_review_response.json',{})
         if response.get('request_hash')!=request['request_hash'] or not response.get('reviewer'): return False
         rows=response.get('clips',[])

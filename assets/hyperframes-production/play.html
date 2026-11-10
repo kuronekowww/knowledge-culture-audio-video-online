@@ -1,0 +1,17 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>视频预览</title><style>
+:root{color-scheme:dark}body{margin:0;min-height:100vh;background:#191d21;color:#f8f9fb;font:16px system-ui,sans-serif;display:grid;justify-content:center;align-content:center}
+hyperframes-player{display:block;width:min(94vw,48vh);aspect-ratio:9/16;background:#101214}
+nav{display:flex;gap:1em;padding:.65em 0;align-items:center;justify-content:space-between}button{font:inherit;padding:.45em 1em}output{font-variant-numeric:tabular-nums}
+</style><script src="lib/hyperframes-player.global.js"></script>
+<hyperframes-player id="player" width="1080" height="1920" controls src="index.html" runtime-src="lib/hyperframe.runtime.iife.js"></hyperframes-player>
+<nav><button id="toggle" disabled>播放</button><output id="clock">正在加载工程…</output></nav>
+<script>
+const player=document.querySelector('#player'), button=document.querySelector('#toggle'), clock=document.querySelector('#clock');
+const fmt=x=>Math.floor(x/60)+':'+String(Math.floor(x%60)).padStart(2,'0');
+function update(){const ok=player.ready && player.assetsReady && player.duration>0;
+  button.disabled=!ok;button.textContent=player.paused?'播放':'暂停';
+  if(ok)clock.textContent=fmt(player.currentTime)+' / '+fmt(player.duration);}
+button.addEventListener('click',()=>{if(player.paused)player.play();else player.pause();update()});
+setInterval(update,125);
+</script></html>

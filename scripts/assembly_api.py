@@ -96,16 +96,10 @@ def compile_timeline(timeline, assets):
             style=element['style_reference']
             placement={'alpha':style['alpha'],'scale_x':style['scale_x'],'scale_y':style['scale_y'],'transform_x':style['x'],'transform_y':style['y']}
             if element.get('box_px'):placement=layout_profile.api_media_transform(element,assets,canvas)
-            if element['role']=='playback':
-                import branding_assets, config
-                expected=branding_assets.playback_sticker(config.load_spec()['branding']['elements']['playback'],body_end)
-                if element != expected:
-                    raise ValueError('播放贴纸参数过期或包含重复GIF片段，请重新prepare/publish')
-                add('playback-sticker','add_sticker',{'sticker_id':element['sticker_id'],
-                    'start':element['start_us'],'end':body_end,'scale':style['scale_x'],
-                    'transform_x':style['x'],'transform_y':style['y']})
-            elif element['role']=='album_cover':
-                add('album-cover','add_images',{**placement,'image_infos':serial([{'image_url':asset(element['asset_id'],'image'),'start':element['start_us'],'end':body_end}])},[element['asset_id']])
+            if element['role'] in ('playback','album_cover'):
+                if element['role']=='playback' and (element['kind']!='image' or element['asset_id']!='portrait__playback'):
+                    raise ValueError('请用当前版重新准备单帧唱片素材')
+                add(element['role'].replace('_','-'),'add_images',{**placement,'image_infos':serial([{'image_url':asset(element['asset_id'],'image'),'start':element['start_us'],'end':body_end}])},[element['asset_id']])
             elif element['role']=='source_label':
                 add('source-label','add_images',{**placement,'image_infos':serial([{'image_url':asset(element['asset_id'],'image'),'start':element['start_us'],'end':body_end}])},[element['asset_id']])
         add('outro','add_videos',{**layout_profile.api_media_transform(outro,assets,canvas),'video_infos':serial([{

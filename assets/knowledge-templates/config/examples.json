@@ -46,7 +46,7 @@
       "title_line1": {
         "text": "一个优点",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffde00",
           "border_color": "#000000",
@@ -66,12 +66,12 @@
             990.0,
             442.6
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -90,6 +90,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1.0282,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1.0282
           },
           "measurement": {
@@ -102,7 +103,7 @@
       "title_line2": {
         "text": "能代表整个人吗？",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -122,12 +123,12 @@
             990.0,
             543.4
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -146,6 +147,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -158,7 +160,7 @@
       "subtitle": {
         "text": "这是一种夸大的社会印象",
         "style": {
-          "font_size": 14,
+          "font_size": 12,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -178,12 +180,12 @@
             1008.0,
             1274.5349999999999
           ],
-          "font_file": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+          "font_file": "PingFangUI.ttc",
           "font_sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
           "font_postscript": "PingFangSC-Medium",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "subtitle",
@@ -209,6 +211,7 @@
             "nominal_scale_x": 1,
             "max_lines": 2,
             "overflow": "wrap_without_changing_words_or_timing",
+            "jianying_font_size": 12,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -276,7 +279,7 @@
       "title_line1": {
         "text": "让人愿意帮忙",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffde00",
           "border_color": "#000000",
@@ -296,12 +299,12 @@
             990.0,
             442.6
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -320,6 +323,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1.0282,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1.0282
           },
           "measurement": {
@@ -332,7 +336,7 @@
       "title_line2": {
         "text": "该怎么讲理由？",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -352,12 +356,12 @@
             990.0,
             543.4
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -376,6 +380,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -388,7 +393,7 @@
       "subtitle": {
         "text": "后面两个理由则帮别人\n找了一个帮你的原因",
         "style": {
-          "font_size": 14,
+          "font_size": 12,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -408,12 +413,12 @@
             1008.0,
             1305.5849999999998
           ],
-          "font_file": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+          "font_file": "PingFangUI.ttc",
           "font_sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
           "font_postscript": "PingFangSC-Medium",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "subtitle",
@@ -439,6 +444,7 @@
             "nominal_scale_x": 1,
             "max_lines": 2,
             "overflow": "wrap_without_changing_words_or_timing",
+            "jianying_font_size": 12,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -502,7 +508,7 @@
       "title_line1": {
         "text": "忙着赚眼前的钱",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffde00",
           "border_color": "#000000",
@@ -522,12 +528,12 @@
             990.0,
             442.6
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -546,6 +552,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1.0282,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1.0282
           },
           "measurement": {
@@ -558,7 +565,7 @@
       "title_line2": {
         "text": "还是让自己更值钱？",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -578,12 +585,12 @@
             990.0,
             543.4
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -602,6 +609,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -614,7 +622,7 @@
       "subtitle": {
         "text": "赚钱是外求的结果，\n值钱是内求的结果",
         "style": {
-          "font_size": 14,
+          "font_size": 12,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -634,12 +642,12 @@
             1008.0,
             1305.5849999999998
           ],
-          "font_file": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+          "font_file": "PingFangUI.ttc",
           "font_sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
           "font_postscript": "PingFangSC-Medium",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "subtitle",
@@ -665,6 +673,7 @@
             "nominal_scale_x": 1,
             "max_lines": 2,
             "overflow": "wrap_without_changing_words_or_timing",
+            "jianying_font_size": 12,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -734,7 +743,7 @@
       "title_line1": {
         "text": "坏情绪",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffde00",
           "border_color": "#000000",
@@ -754,12 +763,12 @@
             990.0,
             442.6
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -778,6 +787,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1.0282,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1.0282
           },
           "measurement": {
@@ -790,7 +800,7 @@
       "title_line2": {
         "text": "怎么传给下一个人？",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -810,12 +820,12 @@
             990.0,
             543.4
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -834,6 +844,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -846,7 +857,7 @@
       "subtitle": {
         "text": "这就是人与人之间的\n泄愤连锁反应",
         "style": {
-          "font_size": 14,
+          "font_size": 12,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -866,12 +877,12 @@
             1008.0,
             1305.5849999999998
           ],
-          "font_file": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+          "font_file": "PingFangUI.ttc",
           "font_sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
           "font_postscript": "PingFangSC-Medium",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "subtitle",
@@ -897,6 +908,7 @@
             "nominal_scale_x": 1,
             "max_lines": 2,
             "overflow": "wrap_without_changing_words_or_timing",
+            "jianying_font_size": 12,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -949,7 +961,7 @@
       "title_line1": {
         "text": "想让自己变得更好",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffde00",
           "border_color": "#000000",
@@ -969,12 +981,12 @@
             990.0,
             442.6
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -993,6 +1005,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1.0282,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1.0282
           },
           "measurement": {
@@ -1005,7 +1018,7 @@
       "title_line2": {
         "text": "先迈过哪三步？",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -1025,12 +1038,12 @@
             990.0,
             543.4
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -1049,6 +1062,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -1061,7 +1075,7 @@
       "subtitle": {
         "text": "第三步，发现自己的不凡",
         "style": {
-          "font_size": 14,
+          "font_size": 12,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -1081,12 +1095,12 @@
             1008.0,
             1274.5349999999999
           ],
-          "font_file": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+          "font_file": "PingFangUI.ttc",
           "font_sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
           "font_postscript": "PingFangSC-Medium",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "subtitle",
@@ -1112,6 +1126,7 @@
             "nominal_scale_x": 1,
             "max_lines": 2,
             "overflow": "wrap_without_changing_words_or_timing",
+            "jianying_font_size": 12,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -1172,7 +1187,7 @@
       "title_line1": {
         "text": "回到家门口",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffde00",
           "border_color": "#000000",
@@ -1192,12 +1207,12 @@
             990.0,
             442.6
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -1216,6 +1231,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1.0282,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1.0282
           },
           "measurement": {
@@ -1228,7 +1244,7 @@
       "title_line2": {
         "text": "为何还想独坐一会？",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -1248,12 +1264,12 @@
             990.0,
             543.4
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -1272,6 +1288,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -1284,7 +1301,7 @@
       "subtitle": {
         "text": "即使满身责任，\n我们依然需要时间做自己",
         "style": {
-          "font_size": 14,
+          "font_size": 12,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -1304,12 +1321,12 @@
             1008.0,
             1305.5849999999998
           ],
-          "font_file": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+          "font_file": "PingFangUI.ttc",
           "font_sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
           "font_postscript": "PingFangSC-Medium",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "subtitle",
@@ -1335,6 +1352,7 @@
             "nominal_scale_x": 1,
             "max_lines": 2,
             "overflow": "wrap_without_changing_words_or_timing",
+            "jianying_font_size": 12,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -1385,7 +1403,7 @@
       "title_line1": {
         "text": "你看到的成功经验",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffde00",
           "border_color": "#000000",
@@ -1405,12 +1423,12 @@
             990.0,
             442.6
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -1429,6 +1447,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1.0282,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1.0282
           },
           "measurement": {
@@ -1441,7 +1460,7 @@
       "title_line2": {
         "text": "漏掉了哪些人？",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -1461,12 +1480,12 @@
             990.0,
             543.4
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -1485,6 +1504,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -1497,7 +1517,7 @@
       "subtitle": {
         "text": "那些拜神没被淹死的\n回来后就能告诉你",
         "style": {
-          "font_size": 14,
+          "font_size": 12,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -1517,12 +1537,12 @@
             1008.0,
             1305.5849999999998
           ],
-          "font_file": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+          "font_file": "PingFangUI.ttc",
           "font_sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
           "font_postscript": "PingFangSC-Medium",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "subtitle",
@@ -1548,6 +1568,7 @@
             "nominal_scale_x": 1,
             "max_lines": 2,
             "overflow": "wrap_without_changing_words_or_timing",
+            "jianying_font_size": 12,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -1599,7 +1620,7 @@
       "title_line1": {
         "text": "相处的时间越久",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffde00",
           "border_color": "#000000",
@@ -1619,12 +1640,12 @@
             990.0,
             442.6
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -1643,6 +1664,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1.0282,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1.0282
           },
           "measurement": {
@@ -1655,7 +1677,7 @@
       "title_line2": {
         "text": "关系靠什么维系？",
         "style": {
-          "font_size": 20,
+          "font_size": 13,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -1675,12 +1697,12 @@
             990.0,
             543.4
           ],
-          "font_file": "assets/fonts/jiangxizhuokai.ttf",
+          "font_file": "jiangxizhuokai.ttf",
           "font_sha256": "6d0e19bfee5b481b69cdf338ee848c48a4775ca4ed999606eb59a2feb26a9d22",
           "font_postscript": "jiangxizhuokai-Regular",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "display",
@@ -1699,6 +1721,7 @@
             "max_width_px": 900,
             "nominal_scale_x": 1,
             "max_lines": 1,
+            "jianying_font_size": 13,
             "resolved_scale_x": 1
           },
           "measurement": {
@@ -1711,7 +1734,7 @@
       "subtitle": {
         "text": "性格和能力更被重视",
         "style": {
-          "font_size": 14,
+          "font_size": 12,
           "font": null,
           "text_color": "#ffffff",
           "border_color": "#000000",
@@ -1731,12 +1754,12 @@
             1008.0,
             1274.5349999999999
           ],
-          "font_file": "/System/Library/PrivateFrameworks/FontServices.framework/Resources/Reserved/PingFangUI.ttc",
+          "font_file": "PingFangUI.ttc",
           "font_sha256": "13b201d63324db59de86956c11c46d1f0ad9ac0aeaa0b9d035c012a794062db7",
           "font_postscript": "PingFangSC-Medium",
           "layout_profile": {
-            "id": "portrait-user-20261107-r18",
-            "sha256": "44b07491c2dd44dd64e5a657d121b60b6d197b66eb04586bbba5e5c0b6e1d2fa"
+            "id": "portrait-team-20261110-clean-raised-cover-r25",
+            "sha256": "d0225262a8b907e72e5aa2f6f8de02a1ba095a170a3c4158c7b9040f11bdd39f"
           },
           "pixel_style": {
             "font": "subtitle",
@@ -1762,6 +1785,7 @@
             "nominal_scale_x": 1,
             "max_lines": 2,
             "overflow": "wrap_without_changing_words_or_timing",
+            "jianying_font_size": 12,
             "resolved_scale_x": 1
           },
           "measurement": {

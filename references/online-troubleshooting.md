@@ -5,10 +5,10 @@
 未提供封面不是品牌关闭指令。默认branding_enabled=true；已确认文字画风时可在album_visuals配置：
 
 ```json
-{"reference_mode":"style_only","background_prompt":"按用户已确认文字画风生成无字竖版背景，纹理向内延伸且中央留白","background_revision":1,"background_size":"1024x1536"}
+{"reference_mode":"style_only"}
 ```
 
-不填reference_image，不造占位封面、不声称用户附件损坏。保留品牌文字、贴片、单贴纸与片尾，仅略过专辑小封面；背景仍每专辑一次生成。只有缺少真实画风选择才询问用户。旧任务若branding_enabled=false，先核对是否确为用户选择；不能从示例或缺封面推导关闭。不要自动改写旧缓存来源或清空收费任务。
+不填reference_image，不造占位封面、不声称用户附件损坏。保留品牌文字、贴片、静态唱片与片尾，仅略过专辑小封面；包框纯色在本机计算。只有缺少真实画风选择才询问用户。旧任务若branding_enabled=false，先核对是否确为用户选择；不能从示例或缺封面推导关闭。不要自动改写旧缓存来源或清空收费任务。
 
 ## 文字轨道
 

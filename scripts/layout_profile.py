@@ -10,7 +10,7 @@ import json
 import math
 from pathlib import Path
 
-from PIL import Image, ImageFont, ImageOps
+from PIL import Image, ImageOps
 from artifacts import atomic_json, digest, file_hash, read_json
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -32,59 +32,35 @@ def binding():
 def check_assets():
     p = load()
     expected = dict(p['asset_sha256'])
+    import team_fonts
+    team_fonts.resolve_all()
     for f in p['font_files'].values():
-        expected[f['asset']] = f['sha256']
         expected[f['coverage']] = f['coverage_sha256']
     for name, sha in expected.items():
-        if not (ROOT/name).is_file() or file_hash(ROOT/name) != sha:
+        path = ROOT/name
+        if not path.is_file() or file_hash(path) != sha:
             raise ValueError('模板素材/字体缺失或版本不符，禁止回退：' + name)
     return expected
 
 
-@lru_cache(maxsize=32)
-def _font(asset, size, mtime):
-    return ImageFont.truetype(str(ROOT/asset), size=size)
-
-
 @lru_cache(maxsize=8)
-def _coverage(path, mtime):
-    return read_json(ROOT/path)
-
-
-@lru_cache(maxsize=512)
-def local_font_width(text, name, size):
-    """Use the registered macOS font; its hash is checked before building."""
-    import ctypes as c
-    cf=c.CDLL('/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation')
-    ct=c.CDLL('/System/Library/Frameworks/CoreText.framework/CoreText')
-    cf.CFStringCreateWithCString.argtypes=[c.c_void_p,c.c_char_p,c.c_uint32];cf.CFStringCreateWithCString.restype=c.c_void_p
-    ct.CTFontCreateWithName.argtypes=[c.c_void_p,c.c_double,c.c_void_p];ct.CTFontCreateWithName.restype=c.c_void_p
-    ct.CTFontGetGlyphsForCharacters.argtypes=[c.c_void_p,c.c_void_p,c.c_void_p,c.c_long];ct.CTFontGetGlyphsForCharacters.restype=c.c_bool
-    ct.CTFontGetAdvancesForGlyphs.argtypes=[c.c_void_p,c.c_uint32,c.c_void_p,c.c_void_p,c.c_long];ct.CTFontGetAdvancesForGlyphs.restype=c.c_double
-    cf.CFRelease.argtypes=[c.c_void_p]
-    family=cf.CFStringCreateWithCString(None,name.encode(),0x08000100);font=ct.CTFontCreateWithName(family,size,None)
-    try:
-        raw=text.encode('utf-16-le');n=len(raw)//2;chars=(c.c_uint16*n).from_buffer_copy(raw);glyphs=(c.c_uint16*n)()
-        if not ct.CTFontGetGlyphsForCharacters(font,chars,glyphs,n):raise ValueError('本机字幕字体缺字')
-        return ct.CTFontGetAdvancesForGlyphs(font,0,glyphs,None,n)
-    finally:cf.CFRelease(font);cf.CFRelease(family)
+def _advances(path, size, mtime):
+    # Reference-machine glyph advances, from the exact r21 files and sizes.
+    # No glyph outlines are distributed. The r21 display font has no kern table.
+    runs = read_json(ROOT/path)['sizes'][str(size)]
+    return {cp: advance for start, end, advance in runs for cp in range(start, end + 1)}
 
 
 def measure(text, role, p=None):
     p = p or load()
     style = p['texts'][role]
-    f = p['font_files'][style['font']]
-    runs = _coverage(f['coverage'], (ROOT/f['coverage']).stat().st_mtime_ns)
-    missing = sorted({c for c in text if c != '\n' and not any(a <= ord(c) <= b for a,b in runs)})
+    font = p['font_files'][style['font']]
+    metrics = font['calibrated_advances']
+    widths = _advances(metrics, style['font_size_px'], (ROOT/metrics).stat().st_mtime_ns)
+    missing = sorted({c for c in text if c != '\n' and ord(c) not in widths})
     if missing:
         raise ValueError('指定字体缺字，不能静默回退：' + ''.join(missing))
-    # CSS letter-spacing contributes once for each glyph, including the last.
-    if f.get('embedding')=='local':
-        width=lambda line:local_font_width(line,f['postscript'],style['font_size_px'])
-    else:
-        font = _font(f['asset'], style['font_size_px'], (ROOT/f['asset']).stat().st_mtime_ns)
-        width=font.getlength
-    return max((width(line) + len(line)*style['letter_spacing_px']
+    return max((sum(widths[ord(c)] for c in line) + len(line)*style['letter_spacing_px']
                 for line in text.split('\n')), default=0)
 
 
@@ -99,21 +75,28 @@ def fit(text, role, p=None):
         candidates=[]
         for i in range(1,len(text)):
             a,b=text[:i],text[i:]
+            if role=='subtitle' and min(len(a.strip()),len(b.strip()))<2:continue
             if b[0] in '，。？！：；、）》」』' or a[-1] in '（《「『':continue
             width=measure(a+'\n'+b,role,p)+stroke
             if width<=limit:
-                penalty=0 if a[-1] in '：:｜|—， ' else 20
+                penalty=0 if a[-1] in '：:｜|—，。？！；、 ' else 40
                 candidates.append((width+penalty,abs(len(a)-len(b)),i,a+'\n'+b))
         if not candidates:
             raise ValueError('专辑名需填写copy.album_display_name简称' if role=='album' else '字幕两行仍超宽：必须按原声真实词级时码拆分，禁止改写字幕')
         text=min(candidates)[-1]
     if len(text.split('\n'))>s['max_lines']:
         raise ValueError('行数超过模板限制：'+role)
+    if role=='subtitle' and '\n' in text and any(len(line.strip())<2 for line in text.split('\n')):
+        raise ValueError('字幕换行出现孤字；按语义重排展示换行，保持字词与时码')
     width=measure(text,role,p)+stroke
     if width>limit+0.01:
         raise ValueError(f'{role}实测{width:.2f}px，超过{limit}px；改写文案，不减字号或截字')
     sx=min(s['nominal_scale_x'],limit/width)
     return text, {'advance_px':width-stroke,'paint_width_px':width*sx,'scale_x':sx}
+
+
+def album_display(copy):
+    return copy.get('album_display_name') or copy['album_name']
 
 
 def text_box(role, line_count=1, p=None):
@@ -134,9 +117,14 @@ def raw_position(cx,cy,canvas):
 def resolved_style(role, text, color=None, p=None):
     p=p or load();s=deepcopy(p['texts'][role]);text,measurement=fit(text,role,p)
     box=text_box(role,len(text.split('\n')),p)
-    # API accepts integer UI sizes. Preserve exact pixel size through derived scale.
-    api_size=math.ceil(s['font_size_px']/4)
-    scale=s['font_size_px']/(api_size*4)
+    # Jianying native UI sizes are explicit settings, independent of web pixels.
+    # Keep the existing rounding scale; never enlarge a smaller native size back
+    # to the old pixel size, which would cancel the user's native font-size correction.
+    pixel_size=math.ceil(s['font_size_px']/4)
+    api_size=s.get('jianying_font_size',pixel_size)
+    if isinstance(api_size,bool) or not isinstance(api_size,int) or api_size<=0:
+        raise ValueError('剪映字号必须为正整数：'+role)
+    scale=s['font_size_px']/(pixel_size*4)
     width=measurement['paint_width_px']
     cx=(box[0]+box[2])/2 if role!='album' else s['left_top_px'][0]+(width-s['stroke_px'])/2
     cy=(box[1]+box[3])/2
@@ -146,7 +134,8 @@ def resolved_style(role, text, color=None, p=None):
         'border_color':s['stroke_color'],'bold':False,'underline':False,'alignment':0 if role=='album' else 1,
         'letter_spacing':s['letter_spacing_px']/s['font_size_px']/.05,
         'line_spacing':(s['line_height']-1-.02)/.05,
-        'x':x,'y':y,'scale_x':scale*measurement['scale_x'],'scale_y':scale,'alpha':1,
+        'x':x,'y':y,'scale_x':s.get('jianying_scale_x',scale*measurement['scale_x']),
+        'scale_y':s.get('jianying_scale_y',scale),'alpha':1,
         'safe_box_px':box, 'font_file':f['asset'],'font_sha256':f['sha256'],
         'font_postscript':f['postscript'], 'layout_profile':binding(),
         'pixel_style':{**s,'color':color or s.get('color','#ffffff'),'resolved_scale_x':measurement['scale_x']},
@@ -190,18 +179,16 @@ def compile_spec(base):
         center_px=[(l+r)/2,(t+b)/2],slots_px=slots)
     out['portrait']={'canvas':p['canvas'],'safe_area':safe,'texts':{},'images':{
         'cover':{'width':w,'height':h,'fit':'full_canvas_no_inset','content_safe_rect_px':[l,t,r,b],'layout_review_required':True},
-        'background':{'width':w,'height':h,'source':'album_shared_background'},'foreground':p['body_images']}}
+        'background':{'width':w,'height':h,'source':'episode_solid_frame'},'foreground':p['body_images']}}
     for role in p['texts']:
         out['portrait']['texts'][role]=resolved_style(role,'示例',p=p)[1]
     branding=out.setdefault('branding',{});branding.update(overlay={'portrait':p['brand_assets']['overlay']},
         outro={'portrait':p['brand_assets']['outro']})
     style={k:1 for k in ('scale_x','scale_y','alpha')};style.update(x=0,y=0)
-    box=slots['playback'];x,y=raw_position((box[0]+box[2])/2,(box[1]+box[3])/2,p['canvas'])
-    scale=(box[2]-box[0])/p['playback']['native_canvas_width_px']
     branding['elements']={'album_cover':{**style,'source':'current_album_reference','slot':'album_cover'},
         'source_label':{**style,'text':'内容来源｜喜马拉雅APP','dark_asset':p['brand_assets']['source_label_dark'],
           'light_asset':p['brand_assets']['source_label_light'],'slot':'source_label','light_background_luma_threshold':145},
-        'playback':{**style,'sticker_id':p['playback']['sticker_id'],'x':x,'y':y,'scale_x':scale,'scale_y':scale}}
+        'playback':{**p['playback'],'box_px':slots['playback']}}
     out['timing'].update(cover_seconds=p['first_second']['cover_duration_us']/1e6,outro_seconds=p['outro']['duration_us']/1e6)
     out['presentation_policy'].update(text_start_us=p['first_second']['text_start_us'],source_label_start_us=p['first_second']['source_label_start_us'],
         upper_title_max_width_px=p['texts']['title_line1']['max_width_px'])
@@ -230,20 +217,20 @@ def apply(job,line,assets,copy_text=None,album_cover=None):
             import album_visuals
             override=read_json(album_visuals.root(cfg)/'presentation-assets.json',{})
             if override and override.get('album_id')!=str(cfg['album_id']):raise ValueError('共享呈现资产属于其他专辑')
-            if override and override.get('base_reference_sha256')!=album_visuals.current(Path(job),cfg).get('reference_sha256'):
+            if override and override.get('base_reference_sha256')!=album_visuals.validate_setup(Path(job),cfg).get('reference_sha256'):
                 raise ValueError('共享呈现封面绑定的原始封面已变；须明确更新该封面版本')
         if override.get('album_cover'):
             q=override['album_cover'];album_cover=Path(q['path'])
             if file_hash(album_cover)!=q['sha256']:raise ValueError('手选专辑封面哈希变化')
         else:
             import album_visuals
-            state=album_visuals.current(Path(job),read_json(Path(job)/'config.json',{}))
+            state=album_visuals.validate_setup(Path(job),read_json(Path(job)/'config.json',{}))
             album_cover=album_visuals.album_cover_path(state)
     color=album_color(album_cover,p,text.get('album_accent_hex'))
     spec=compile_spec(read_json(ROOT/'spec.json'))
     line.update(layout_profile=binding(),safe_area=spec['portrait']['safe_area'],presentation_policy=spec['presentation_policy'])
     for row in line['texts']:
-        role=row['role'];value=text.get('album_display_name',text['album_name']) if role=='album' else text[role]
+        role=row['role'];value=album_display(text) if role=='album' else text[role]
         row['text'],row['style_reference']=resolved_style(role,value,color['hex'] if role=='album' else None,p)
     # All cues share one style; measurement remains per cue and rejects overflow/missing glyphs.
     for cue in line['subtitles']:
@@ -258,7 +245,9 @@ def apply(job,line,assets,copy_text=None,album_cover=None):
     line['album_background']['end_us']=end
     if line['branding_enabled']:
         import branding_assets
-        elements=[branding_assets.playback_sticker(spec['branding']['elements']['playback'],body)]
+        record=branding_assets.playback_image(spec['branding']['elements']['playback'],body,start_us=p['first_second']['text_start_us'])
+        assets[record['asset_id']]=asset_row(record['asset_id'],ROOT/p['playback']['asset'],'image')
+        elements=[record]
         line['album_cover_available']=album_cover is not None
         if album_cover:
             aid='portrait__album_cover';assets[aid]=asset_row(aid,album_cover,'image')
@@ -307,6 +296,6 @@ if __name__=='__main__':
     parser.add_argument('--resolved-spec',type=Path)
     args=parser.parse_args();check_assets();result={'profile':binding(),'assets':'verified'}
     if args.copy:
-        value=read_json(args.copy);result['text_fit']={r:fit(value['album_name' if r=='album' else r],r) for r in ('album','title_line1','title_line2')}
+        value=read_json(args.copy);result['text_fit']={r:fit(album_display(value) if r=='album' else value[r],r) for r in ('album','title_line1','title_line2')}
     if args.resolved_spec:atomic_json(args.resolved_spec,compile_spec(read_json(ROOT/'spec.json')))
     print(json.dumps(result,ensure_ascii=False))

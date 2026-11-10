@@ -24,28 +24,18 @@ def for_openfilm(job, line, assets):
     line, assets = deepcopy(line), deepcopy(assets)
     already_layered = line.get('frame_fit') == MODE
     if not already_layered:
-        import album_visuals
         import job_versions
         originals = job_versions.image_assets(job)
-        background = album_visuals.current(job, read_json(job / 'config.json', {}))
-        if background['sha256'] != line.get('album_background', {}).get('sha256'):
-            raise ValueError('原交接底图与专辑底图哈希不同；请明确选择同一底图版本')
-        aid = 'portrait__album_background'
-        if aid in assets:
-            raise ValueError('底图素材ID冲突')
-        path = Path(background['path'])
-        assets[aid] = {'asset_id': aid, 'path': str(path), 'kind': 'image',
-                       'sha256': background['sha256'], 'bytes': path.stat().st_size,
-                       'role': 'album_background'}
-        line['album_background']['asset_id'] = aid
     else:
         originals = {}
     background = line['album_background']
-    aid = background.get('asset_id')
-    if aid not in assets or assets[aid]['sha256'] != background['sha256']:
-        raise ValueError('独立底图素材缺失或哈希不匹配')
-    if file_hash(Path(assets[aid]['path'])) != background['sha256']:
-        raise ValueError('独立底图文件哈希变化')
+    aid = background.get('asset_id', 'portrait__album_background')
+    if already_layered:
+        if aid not in assets or assets[aid]['sha256'] != background['sha256']:
+            raise ValueError('独立底图素材缺失或哈希不匹配')
+        if file_hash(Path(assets[aid]['path'])) != background['sha256']:
+            raise ValueError('独立底图文件哈希变化')
+    pictures = []
     for frame in line['frames']:
         if frame.get('role') != 'story':
             continue
@@ -62,6 +52,15 @@ def for_openfilm(job, line, assets):
         item.update(width=size[0], height=size[1], bytes=path.stat().st_size,
                     role='raw_story_image', source_sha256=item['sha256'])
         frame.update(box_px=box, original_size_px=size)
+        pictures.append({'id':frame['shot_id'],'path':path,'sha256':item['sha256']})
+    import solid_frame
+    solid = solid_frame.materialize(job,pictures)
+    source = Path(solid['path'])
+    assets[aid] = {'asset_id':aid,'path':str(source),'kind':'image','sha256':solid['sha256'],
+                   'bytes':source.stat().st_size,'width':line['canvas']['width'],
+                   'height':line['canvas']['height'],'role':'album_background'}
+    background.update(asset_id=aid, mode=solid['mode'], color=solid['color'],
+                      sha256=solid['sha256'], revision=1, reuse_scope='episode')
     background.update(start_us=line['frames'][0]['end_us'], end_us=line['body_duration_us'],
                       box_px=[0, 0, line['canvas']['width'], line['canvas']['height']], fit='cover')
     line['frame_fit'] = MODE

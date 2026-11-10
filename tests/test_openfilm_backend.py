@@ -56,7 +56,8 @@ class BackendTests(unittest.TestCase):
         result=backend.build(self.job,self.project,self.options)
         for item in self.request['assets']:
             copied=self.project/result['source_assets'][item['asset_id']]['project_path']
-            self.assertEqual(file_hash(copied),item['sha256'])
+            if item['asset_id'] != 'background':
+                self.assertEqual(file_hash(copied),item['sha256'])
             self.assertEqual(file_hash(Path(item['path'])),item['sha256'])
         html=(self.project/'film.html').read_text()
         self.assertIn('src="assets/audio.m4a#t=0,5" at="0"',html)
@@ -111,14 +112,6 @@ class BackendTests(unittest.TestCase):
         self.line['subtitles'][0]['start_us']=110_000;self.save_inputs()
         with self.assertRaisesRegex(ValueError,'首秒抑制'):backend.checked_inputs(self.job)
 
-    def test_original_animation_timing_is_preserved(self):
-        from PIL import Image
-        gif=self.root/'original.gif';sheet=self.root/'sheet.png'
-        Image.new('RGBA',(10,10),'red').save(gif,save_all=True,append_images=[Image.new('RGBA',(10,10),'blue')],duration=[100,200],loop=0)
-        info=backend.sprite(gif,sheet)
-        self.assertEqual(info['durations_ms'],[100,200])
-        with Image.open(sheet) as image:self.assertEqual(image.size,(20,10))
-
     def layered_fixture(self):
         from PIL import Image
         from image_layers import MODE
@@ -139,10 +132,15 @@ class BackendTests(unittest.TestCase):
         result=backend.build(self.job,self.project,{'font_file':str(self.font)})
         line=read_json(self.project/'knowledge-timeline.json')
         self.assertEqual(line['frames'][1]['box_px'],[0,600,1080,1320])
-        for aid,source in [('story',raw),('background',bg)]:
+        for aid,source in [('story',raw)]:
             target=self.project/result['source_assets'][aid]['project_path']
             self.assertEqual(file_hash(target),file_hash(source))
             with Image.open(target) as img:self.assertEqual(img.size,(1536,1024) if aid=='story' else (1024,1536))
+        solid=self.project/result['source_assets']['background']['project_path']
+        with Image.open(solid) as image:
+            self.assertEqual(image.size,(1080,1920))
+            self.assertEqual(len(image.getcolors(1)),1)
+        self.assertNotEqual(file_hash(solid),file_hash(bg))
         film=(self.project/'film.html').read_text()
         self.assertLess(film.index('id="track-pictures"'),film.index('id="track-background"'))
         self.assertEqual(line['album_background']['start_us'],1_000_000)

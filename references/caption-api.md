@@ -4,4 +4,4 @@
 
 caption_api仅向add_captions发送服务实际支持的字段，所有文字从配置的text_start_us开始，原声时码不平移。正文title_line1/title_line2单行，各自执行真实字体测宽。专辑名可按编译结果换行，字幕换行保持原文字词。没有CTA/notice或来源文字轨道。
 
-HTTP服务只识别字体目录名，未知字体可能静默回退；因此保存下载后必须执行jianying_profile.finalize，写入指定本地字体路径、字距、描边及精确坐标，再运行draft_verify。未绑定字体或哈希不符不得标记草稿通过。OpenFilm直接嵌入固定展示字体，字幕绑定本机苹方Medium。两端均不通过更换字库或减字号规避超宽。
+HTTP服务只识别字体目录名，未知字体可能静默回退；因此保存下载后必须执行jianying_profile.finalize，写入指定本地字体路径、字距、描边及精确坐标，再运行draft_verify。未绑定字体或哈希不符不得标记草稿通过。新版剪映与OpenFilm均从接收电脑绑定经校验的江西拙楷Regular和苹方简Medium。两端均不通过更换字库或减字号规避超宽。

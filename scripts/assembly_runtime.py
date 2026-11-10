@@ -111,7 +111,7 @@ def local_api(job,cfg,settings):
             log.close();raise
     try:
         response.raise_for_status();paths=response.json().get('paths',{})
-        required=('create_draft','add_images','add_audios','add_sticker','add_captions','save_draft','get_draft')
+        required=('create_draft','add_images','add_audios','add_captions','save_draft','get_draft')
         if not all(any(k.endswith('/'+name) for k in paths) for name in required):
             raise ValueError('本机服务接口不完整；不要切换到远端补做')
         yield

@@ -12,11 +12,13 @@
 
 ## 候选评估
 
-对每个候选检查五件事：需求是否具体、价值是否完整、原声证据是否充足、新观众能否独立理解、专辑是否有真实值得继续听的内容。任一核心条件缺失先调整，不用视觉华丽抵消内容不足。多个候选解决同一问题时去重；相邻视频不重复交付大段相同内容。
+对每个候选检查五件事：需求是否具体、价值是否完整、原声证据是否充足、新观众能否独立理解、选段有没有可核实的后续内容（完整单集不要求）。任一核心条件缺失先调整，不用视觉华丽抵消内容不足。多个候选解决同一问题时去重；相邻视频不重复交付大段相同内容。
 
 开头钩子应在原声自然开头就能辨认问题或意义。可以保留简短必要背景，用标题辅助理解；不把其他位置一句刺激话搬到开头而失去语境，不添加原声未说过的配音。内容天然慢热且难定位收益时换选段，不能用假承诺包装。
 
 ## 回站钩子
+
+以下为excerpt规则。full_track可省略return_hook，记录return_hook_omission_reason即可自然结束；保留钩子时仍按真实证据核验。
 
 本条先回答承诺的问题，再引出下一层应用、反例、比较、方法步骤或后续历史解释。`return_hook`写具体问题、真实track_id、源音频区间、对应文稿证据；不再要求额外CTA文案，也不添加末尾钩子字幕。先确认该声音属于当前专辑，区间真实存在，文本确实支持承诺；程序只检查结构，不能代替Agent查证。
 
@@ -26,4 +28,4 @@
 
 ## 落盘
 
-每条`content`记录problem、demand_reason、delivered_value、conclusion、complete_reason、opening_hook、evidence和return_hook；多段另写splice_reason，超过10分钟另写extended_reason。source秒与最终剪辑秒不能混用，结构见workflow.md。自动校验通过仅表示字段、范围和时长合法，不能写“用户批准”或“知识事实核验通过”。
+每条`content`记录problem、demand_reason、delivered_value、conclusion、complete_reason、opening_hook、evidence、is_complete、is_intro_only；excerpt再写return_hook；多段另写splice_reason，超过10分钟另写extended_reason。source秒与最终剪辑秒不能混用，结构见workflow.md。自动校验通过仅表示字段、范围和时长合法，不能写“用户批准”或“知识事实核验通过”。
